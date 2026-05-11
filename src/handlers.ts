@@ -2,16 +2,16 @@
  * Tool call handlers - bash, mcp, write/edit, unknown tools
  */
 
-import { classifyCommand } from "./core/classifier.js";
+import { classifyCommand } from "./core/classifier";
 import type {
   PermissionLevel,
   PermissionRequestOptions,
   PermissionState,
   WriteToolCallOptions,
-} from "./core/types.js";
-import { LEVEL_INDEX, LEVEL_INFO } from "./core/types.js";
-import { setLevel } from "./state.js";
-import { hasInteractiveUI, notifySystem, truncate } from "./ui.js";
+} from "./core/types";
+import { LEVEL_INDEX, LEVEL_INFO } from "./core/types";
+import { setLevel } from "./state";
+import { hasInteractiveUI, notifySystem, truncate } from "./ui";
 
 // ============================================================================
 // DANGEROUS COMMAND HANDLER

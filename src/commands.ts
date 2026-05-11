@@ -2,21 +2,21 @@
  * Command handlers - /permission and /permission-mode
  */
 
-import { invalidateConfigCache } from "./core/config.js";
-import { loadPermissionConfig, savePermissionConfig } from "./core/settings.js";
+import { invalidateConfigCache } from "./core/config";
+import { loadPermissionConfig, savePermissionConfig } from "./core/settings";
 import type {
   PermissionLevel,
   PermissionMode,
   PermissionState,
-} from "./core/types.js";
+} from "./core/types";
 import {
   LEVELS,
   LEVEL_INFO,
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
-} from "./core/types.js";
-import { setLevel, setMode } from "./state.js";
-import { hasInteractiveUI } from "./ui.js";
+} from "./core/types";
+import { setLevel, setMode } from "./state";
+import { hasInteractiveUI } from "./ui";
 
 // ============================================================================
 // /permission COMMAND

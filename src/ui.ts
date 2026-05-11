@@ -6,8 +6,8 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { PermissionLevel } from "./core/types.js";
-import { LEVEL_INFO } from "./core/types.js";
+import type { PermissionLevel } from "./core/types";
+import { LEVEL_INFO } from "./core/types";
 
 // ============================================================================
 // COLOR CODES

@@ -1,21 +1,21 @@
 import {
   loadGlobalPermission,
   loadGlobalPermissionMode,
-} from "./core/settings.js";
-import type { PermissionLevel, PermissionMode } from "./core/types.js";
+} from "./core/settings";
+import type { PermissionLevel, PermissionMode } from "./core/types";
 import {
   LEVELS,
   LEVEL_INFO,
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
-} from "./core/types.js";
+} from "./core/types";
 import {
   handleBashToolCall,
   handleMcpToolCall,
   handleWriteToolCall,
   isKnownReadTool,
-} from "./handlers.js";
-import { getStatusText, isQuietMode } from "./ui.js";
+} from "./handlers";
+import { getStatusText, isQuietMode } from "./ui";
 
 // Re-export types and constants needed by the hook
 export {
@@ -27,7 +27,7 @@ export {
   type PermissionMode,
 };
 
-import { PermissionState } from "./core/types.js";
+import { PermissionState } from "./core/types";
 
 // ============================================================================
 // SESSION START

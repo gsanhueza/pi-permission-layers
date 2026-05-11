@@ -5,13 +5,13 @@
 import {
   saveGlobalPermission,
   saveGlobalPermissionMode,
-} from "./core/settings.js";
+} from "./core/settings";
 import type {
   PermissionLevel,
   PermissionMode,
   PermissionState,
-} from "./core/types.js";
-import { getStatusText } from "./ui.js";
+} from "./core/types";
+import { getStatusText } from "./ui";
 
 export function createInitialState(): PermissionState {
   return {
