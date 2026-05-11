@@ -9,11 +9,10 @@
 
 import {
   handleBashToolCall,
-  handleWriteToolCall,
   handleMcpToolCall,
-  createInitialState,
-  type PermissionState,
-} from "../src/permission.js";
+  handleWriteToolCall,
+} from "../src/handlers.js";
+import { createInitialState } from "../src/state.js";
 
 // ============================================================================
 // Test runner (same pattern as permission.test.ts)
@@ -37,7 +36,9 @@ function assert(condition: boolean, message: string) {
 
 function assertEqual<T>(actual: T, expected: T, message: string) {
   if (actual !== expected) {
-    throw new Error(`${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    throw new Error(
+      `${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    );
   }
 }
 
@@ -137,7 +138,7 @@ test("bash prompt: command shown with $ prefix in message", async () => {
   const { message } = ctx.selectCalls[0];
   assert(
     message.startsWith("$ git push origin main"),
-    `Expected message to start with "$ git push origin main", got: "${message}"`
+    `Expected message to start with "$ git push origin main", got: "${message}"`,
   );
 });
 
@@ -151,7 +152,7 @@ test("bash prompt: short command is not truncated", async () => {
   const { message } = ctx.selectCalls[0];
   assert(
     message.includes("npm install"),
-    `Expected message to contain "npm install", got: "${message}"`
+    `Expected message to contain "npm install", got: "${message}"`,
   );
   assert(!message.includes("…"), "Short command should not be truncated");
 });
@@ -171,7 +172,7 @@ test("bash prompt: long command is truncated with ellipsis", async () => {
   const displayedCmd = message.split("  [")[0]; // strip " [requires ...]"
   assert(
     displayedCmd.length <= 83,
-    `Displayed command too long: ${displayedCmd.length} chars`
+    `Displayed command too long: ${displayedCmd.length} chars`,
   );
 });
 
@@ -186,7 +187,7 @@ test("bash prompt: required level shown in message", async () => {
   const { message } = ctx.selectCalls[0];
   assert(
     message.includes("[requires High]"),
-    `Expected "[requires High]" in message, got: "${message}"`
+    `Expected "[requires High]" in message, got: "${message}"`,
   );
 });
 
@@ -201,7 +202,7 @@ test("bash prompt: medium-level command shows correct required level", async () 
   const { message } = ctx.selectCalls[0];
   assert(
     message.includes("[requires Medium]"),
-    `Expected "[requires Medium]" in message, got: "${message}"`
+    `Expected "[requires Medium]" in message, got: "${message}"`,
   );
 });
 
@@ -233,7 +234,7 @@ test("bash prompt: Allow all option includes level and (session)", async () => {
   const allowAll = options.find((o) => o.startsWith("Allow all"));
   assert(
     allowAll === "Allow all High (session)",
-    `Expected "Allow all High (session)", got: "${allowAll}"`
+    `Expected "Allow all High (session)", got: "${allowAll}"`,
   );
 });
 
@@ -247,7 +248,7 @@ test("bash prompt: Allow all option uses correct level for medium commands", asy
   const allowAll = options.find((o) => o.startsWith("Allow all"));
   assert(
     allowAll === "Allow all Medium (session)",
-    `Expected "Allow all Medium (session)", got: "${allowAll}"`
+    `Expected "Allow all Medium (session)", got: "${allowAll}"`,
   );
 });
 
@@ -272,7 +273,7 @@ test("bash: Cancel returns block result", async () => {
   assert(result!.block === true, "block should be true");
   assert(
     result!.reason.includes("Cancelled"),
-    `Reason should mention cancellation: "${result!.reason}"`
+    `Reason should mention cancellation: "${result!.reason}"`,
   );
 });
 
@@ -282,8 +283,16 @@ test("bash: Allow all upgrades state level for session", async () => {
 
   const result = await handleBashToolCall(state, "git push", ctx);
   assertEqual(result, undefined, "Allow all should permit the command");
-  assertEqual(state.currentLevel, "high", "State level should be upgraded to high");
-  assertEqual(state.isSessionOnly, true, "Should be session-only (not saved globally)");
+  assertEqual(
+    state.currentLevel,
+    "high",
+    "State level should be upgraded to high",
+  );
+  assertEqual(
+    state.isSessionOnly,
+    true,
+    "Should be session-only (not saved globally)",
+  );
 });
 
 test("bash: Allow all Medium upgrades state to medium", async () => {
@@ -292,7 +301,11 @@ test("bash: Allow all Medium upgrades state to medium", async () => {
 
   const result = await handleBashToolCall(state, "npm install", ctx);
   assertEqual(result, undefined, "Allow all should permit the command");
-  assertEqual(state.currentLevel, "medium", "State level should be upgraded to medium");
+  assertEqual(
+    state.currentLevel,
+    "medium",
+    "State level should be upgraded to medium",
+  );
 });
 
 test("bash: sufficient permission - no prompt shown", async () => {
@@ -337,11 +350,11 @@ test("dangerous: select title shows command with $ prefix", async () => {
   const { message } = ctx.selectCalls[0];
   assert(
     message.startsWith("⚠️ Dangerous: $ "),
-    `Expected "⚠️ Dangerous: $ " prefix, got: "${message}"`
+    `Expected "⚠️ Dangerous: $ " prefix, got: "${message}"`,
   );
   assert(
     message.includes("rm -rf /tmp/test"),
-    `Expected command in title, got: "${message}"`
+    `Expected command in title, got: "${message}"`,
   );
 });
 
@@ -353,13 +366,17 @@ test("dangerous: options are Allow once and Cancel only", async () => {
 
   assert(ctx.selectCalls.length > 0, "select should have been called");
   const { options } = ctx.selectCalls[0];
-  assertEqual(options.length, 2, "Dangerous prompt should have exactly 2 options");
+  assertEqual(
+    options.length,
+    2,
+    "Dangerous prompt should have exactly 2 options",
+  );
   assert(options.includes("Allow once"), "Options should include 'Allow once'");
   assert(options.includes("Cancel"), "Options should include 'Cancel'");
   // No "Allow all" for dangerous commands
   assert(
     !options.some((o) => o.startsWith("Allow all")),
-    "Dangerous prompt should NOT have 'Allow all' option"
+    "Dangerous prompt should NOT have 'Allow all' option",
   );
 });
 
@@ -440,7 +457,7 @@ test("write: prompt title includes file path", async () => {
   const { message } = ctx.selectCalls[0];
   assert(
     message.includes("/src/index.ts"),
-    `Expected file path in message, got: "${message}"`
+    `Expected file path in message, got: "${message}"`,
   );
 });
 
@@ -467,17 +484,13 @@ test("mcp: prompts at minimal level with tool name", async () => {
   const state = minimalState();
   const ctx = makeCtx("Cancel");
 
-  await handleMcpToolCall(
-    state,
-    JSON.stringify({ tool: "filesystem_read" }),
-    ctx
-  );
+  await handleMcpToolCall(state, { tool: "filesystem_read" }, ctx);
 
   assert(ctx.selectCalls.length > 0, "select should have been called");
   const { message } = ctx.selectCalls[0];
   assert(
     message.includes("filesystem_read"),
-    `Expected tool name in message, got: "${message}"`
+    `Expected tool name in message, got: "${message}"`,
   );
 });
 
@@ -485,17 +498,17 @@ test("mcp: no prompt at medium or above", async () => {
   const state = stateAt("medium");
   const ctx = makeCtx("Cancel");
 
-  await handleMcpToolCall(
-    state,
-    JSON.stringify({ tool: "some_tool" }),
-    ctx
-  );
+  await handleMcpToolCall(state, { tool: "some_tool" }, ctx);
 
   // At medium, it notifies but does NOT prompt via select
-  assertEqual(ctx.selectCalls.length, 0, "select should NOT have been called at medium");
+  assertEqual(
+    ctx.selectCalls.length,
+    0,
+    "select should NOT have been called at medium",
+  );
   assert(
     ctx.notifyCalls.some((n) => n.message.includes("some_tool")),
-    "Should notify about the tool call"
+    "Should notify about the tool call",
   );
 });
 
@@ -503,8 +516,8 @@ test("mcp: unknown args still show a prompt", async () => {
   const state = minimalState();
   const ctx = makeCtx("Cancel");
 
-  // Invalid JSON
-  await handleMcpToolCall(state, "not-json", ctx);
+  // Unknown action mode requires medium - should prompt at minimal level
+  await handleMcpToolCall(state, { action: "unknown_action" }, ctx);
 
   assert(ctx.selectCalls.length > 0, "select should have been called");
 });
@@ -522,10 +535,14 @@ test("block mode: blocks without prompting", async () => {
 
   assert(result !== undefined, "Should block in block mode");
   assert(result!.block === true, "block should be true");
-  assertEqual(ctx.selectCalls.length, 0, "select should NOT be called in block mode");
+  assertEqual(
+    ctx.selectCalls.length,
+    0,
+    "select should NOT be called in block mode",
+  );
   assert(
     result!.reason.includes("block"),
-    `Reason should mention block mode: "${result!.reason}"`
+    `Reason should mention block mode: "${result!.reason}"`,
   );
 });
 
@@ -537,7 +554,11 @@ test("block mode: dangerous command also blocks without prompting", async () => 
   const result = await handleBashToolCall(state, "rm -rf /tmp", ctx);
 
   assert(result !== undefined, "Should block dangerous command in block mode");
-  assertEqual(ctx.selectCalls.length, 0, "select should NOT be called in block mode");
+  assertEqual(
+    ctx.selectCalls.length,
+    0,
+    "select should NOT be called in block mode",
+  );
 });
 
 // ============================================================================

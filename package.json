@@ -20,7 +20,7 @@
   },
   "pi": {
     "extensions": [
-      "./src/permission.js"
+      "./src/index.ts"
     ]
   },
   "scripts": {

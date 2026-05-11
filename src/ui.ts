@@ -1,0 +1,199 @@
+/**
+ * UI helpers - status text, mode detection, terminal focus, system notifications
+ */
+
+import { execFile } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import type { PermissionLevel } from "./core/types.js";
+import { LEVEL_INFO } from "./core/types.js";
+
+// ============================================================================
+// COLOR CODES
+// ============================================================================
+
+const BOLD = "\x1b[1m";
+const RESET = "\x1b[0m";
+const RED = "\x1b[31m";
+const YELLOW = "\x1b[33m";
+const GREEN = "\x1b[32m";
+const CYAN = "\x1b[36m";
+const DIM = "\x1b[2m";
+
+const LEVEL_COLORS: Record<PermissionLevel, string> = {
+  minimal: RED,
+  low: YELLOW,
+  medium: CYAN,
+  high: GREEN,
+  bypassed: DIM,
+};
+
+export function getStatusText(level: PermissionLevel): string {
+  const info = LEVEL_INFO[level];
+  const color = LEVEL_COLORS[level];
+  return `${BOLD}${color}${info.label}${RESET} ${DIM}- ${info.desc}${RESET}`;
+}
+
+// ============================================================================
+// MODE DETECTION
+// ============================================================================
+
+export function getPiModeFromArgv(
+  argv: string[] = process.argv,
+): string | undefined {
+  const eq = argv.find((a) => a.startsWith("--mode="));
+  if (eq) return eq.slice("--mode=".length);
+
+  const idx = argv.indexOf("--mode");
+  if (idx !== -1 && idx + 1 < argv.length) return argv[idx + 1];
+
+  return undefined;
+}
+
+export function hasInteractiveUI(ctx: any): boolean {
+  if (!ctx?.hasUI) return false;
+
+  const mode = getPiModeFromArgv()?.toLowerCase();
+  if (mode && mode !== "interactive") return false;
+
+  return true;
+}
+
+export function isQuietMode(ctx: any): boolean {
+  if (ctx?.quiet || ctx?.isQuiet) return true;
+  if (ctx?.ui?.quiet || ctx?.ui?.isQuiet) return true;
+  if (ctx?.settings?.quietStartup || ctx?.settings?.quiet) return true;
+
+  const envQuiet = process.env.PI_QUIET?.toLowerCase();
+  if (envQuiet && ["1", "true", "yes"].includes(envQuiet)) return true;
+
+  if (process.argv.includes("--quiet") || process.argv.includes("-q"))
+    return true;
+
+  return isQuietStartupFromSettings();
+}
+
+function isQuietStartupFromSettings(): boolean {
+  const settingsPath = path.join(os.homedir(), ".pi", "agent", "settings.json");
+  try {
+    const raw = fs.readFileSync(settingsPath, "utf-8");
+    const settings = JSON.parse(raw) as { quietStartup?: boolean };
+    return settings.quietStartup === true;
+  } catch {
+    return false;
+  }
+}
+
+// ============================================================================
+// TERMINAL FOCUS DETECTION
+// ============================================================================
+
+function detectTerminalBundleId(): string | null {
+  const bundleId = process.env.__CFBundleIdentifier;
+  if (bundleId) return bundleId;
+
+  if (process.env.GHOSTTY_RESOURCES_DIR) return "com.mitchellh.ghostty";
+  if (process.env.ITERM_SESSION_ID) return "com.googlecode.iterm2";
+  if (process.env.KITTY_PID) return "net.kovidgoyal.kitty";
+  if (process.env.ALACRITTY_WINDOW_ID) return "org.alacritty";
+  if (process.env.WARP_IS_LOCAL_SHELL_SESSION) return "dev.warp.Warp-Stable";
+  if (process.env.TERM_PROGRAM === "Apple_Terminal")
+    return "com.apple.Terminal";
+  if (process.env.TERM_PROGRAM === "vscode") return "com.microsoft.VSCode";
+
+  return null;
+}
+
+let _terminalBundleId: string | null | undefined;
+function getTerminalBundleId(): string | null {
+  if (_terminalBundleId === undefined) {
+    _terminalBundleId = detectTerminalBundleId();
+  }
+  return _terminalBundleId;
+}
+
+function isTmux(): boolean {
+  return !!process.env.TMUX;
+}
+
+async function isAppFocused(): Promise<boolean> {
+  if (process.platform !== "darwin") return true;
+
+  const bundleId = getTerminalBundleId();
+  if (!bundleId) return true;
+
+  return new Promise((resolve) => {
+    execFile(
+      "osascript",
+      [
+        "-e",
+        'tell application "System Events" to return bundle identifier of first application process whose frontmost is true',
+      ],
+      { timeout: 500 },
+      (err, stdout) => {
+        if (err) {
+          resolve(true);
+          return;
+        }
+        resolve(stdout.trim() === bundleId);
+      },
+    );
+  });
+}
+
+async function isTerminalFocused(): Promise<boolean> {
+  if (isTmux()) {
+    return new Promise((resolve) => {
+      execFile(
+        "tmux",
+        ["display-message", "-p", "#{pane_active}"],
+        { timeout: 500 },
+        (err, stdout) => {
+          if (err || stdout.trim() !== "1") {
+            resolve(false);
+            return;
+          }
+          resolve(isAppFocused());
+        },
+      );
+    });
+  }
+
+  return isAppFocused();
+}
+
+// ============================================================================
+// SYSTEM NOTIFICATIONS
+// ============================================================================
+
+export async function notifySystem(
+  title: string,
+  message: string,
+): Promise<void> {
+  const focused = await isTerminalFocused();
+  if (focused) return;
+
+  try {
+    if (process.platform === "darwin") {
+      const bundleId = getTerminalBundleId();
+      const tnArgs = ["-title", title, "-message", message];
+      if (bundleId) tnArgs.push("-activate", bundleId);
+
+      execFile("terminal-notifier", tnArgs, () => {});
+    } else if (process.platform === "linux") {
+      execFile("notify-send", ["-u", "critical", title, message], () => {});
+    }
+  } catch {
+    // Silently fail if notifications unavailable
+  }
+}
+
+// ============================================================================
+// UTILITY
+// ============================================================================
+
+export function truncate(s: string, maxLen = 80): string {
+  const trimmed = s.trim();
+  return trimmed.length > maxLen ? trimmed.slice(0, maxLen - 1) + "…" : trimmed;
+}
