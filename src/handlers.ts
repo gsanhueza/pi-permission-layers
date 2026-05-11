@@ -280,26 +280,6 @@ export async function handleMcpToolCall(
 }
 
 // ============================================================================
-// UNKNOWN TOOL HANDLER
-// ============================================================================
-
-async function handleUnknownToolCall(
-  state: PermissionState,
-  toolName: string,
-  ctx: any,
-): Promise<{ block: true; reason: string } | undefined> {
-  return requestPermission({
-    state,
-    message: `⚠️ Unknown tool "${toolName}" requires High permission`,
-    requiredLevel: "high",
-    details: `Unknown tool "${toolName}"`,
-    notifyTitle: "Permission Required",
-    envVarHint: 'pi -p "..."',
-    ctx,
-  });
-}
-
-// ============================================================================
 // WRITE/EDIT TOOL HANDLER
 // ============================================================================
 

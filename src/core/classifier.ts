@@ -71,10 +71,6 @@ function detectShellTricks(command: string): boolean {
   return false;
 }
 
-function hasArithmeticExpansion(command: string): boolean {
-  return /\$\(\(/.test(command);
-}
-
 // Output redirection operators that write to files
 const OUTPUT_REDIRECTION_OPS = new Set([">", ">>", ">|", "&>", "&>>"]);
 
