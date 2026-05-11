@@ -3,14 +3,23 @@
  */
 
 import { parse } from "shell-quote";
+import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./config";
 import {
-  applyPrefixMappings,
-  checkOverrides,
-  getCachedConfig,
-} from "./config.js";
-import type { Classification, PermissionLevel } from "./types.js";
-import { LEVEL_INDEX } from "./types.js";
-import { isMinimalLevel, isMediumLevel, isHighLevel, getCommandName } from "./levels/index.js";
+  ALL_REDIRECTION_OPS,
+  COMMAND_SEPARATORS,
+  OUTPUT_REDIRECTION_OPS,
+  SAFE_REDIRECTION_TARGETS,
+  SHELL_EXECUTION_COMMANDS,
+  SHELL_TRICK_PATTERNS,
+} from "./constants";
+import {
+  getCommandName,
+  isHighLevel,
+  isMediumLevel,
+  isMinimalLevel,
+} from "./levels/index";
+import type { Classification, PermissionLevel } from "./types";
+import { LEVEL_INDEX } from "./types";
 
 // ============================================================================
 // COMMAND PARSING
@@ -24,33 +33,6 @@ interface ParsedCommand {
   /** Output redirections to non-special files (>, >>) */
   writesFiles?: boolean;
 }
-
-// Shell execution commands that can run arbitrary code
-const SHELL_EXECUTION_COMMANDS = new Set([
-  "eval",
-  "exec",
-  "source",
-  ".", // shell builtins
-  "env", // can execute commands: env rm -rf /
-  "command", // bypasses aliases, can execute arbitrary commands
-  "builtin", // uses shell builtins directly
-  // Wrapper commands that can execute arbitrary commands
-  "time",
-  "nice",
-  "nohup",
-  "timeout",
-  "watch",
-  "strace",
-  // Note: xargs is handled in CONDITIONAL_WRITE_COMMANDS with smart logic
-]);
-
-// Patterns that indicate command substitution or shell tricks in raw command
-const SHELL_TRICK_PATTERNS = [
-  /\$\((?!\()[^)]+\)/, // $(command) - command substitution (exclude $(( for arithmetic)
-  /`[^`]+`/, // `command` - backtick substitution
-  /<\([^)]+\)/, // <(command) - process substitution (input)
-  />\([^)]+\)/, // >(command) - process substitution (output)
-];
 
 function hasDangerousExpansion(command: string): boolean {
   const braceExpansions = command.match(/\$\{[^}]+\}/g) || [];
@@ -71,18 +53,6 @@ function detectShellTricks(command: string): boolean {
   }
   return false;
 }
-
-// Output redirection operators that write to files
-const OUTPUT_REDIRECTION_OPS = new Set([">", ">>", ">|", "&>", "&>>"]);
-
-// Safe redirection targets (not actual file writes)
-const SAFE_REDIRECTION_TARGETS = new Set([
-  "/dev/null",
-  "/dev/stdout",
-  "/dev/stderr",
-  "/dev/fd/1",
-  "/dev/fd/2",
-]);
 
 function parseCommand(command: string): ParsedCommand {
   const hasShellTricks = detectShellTricks(command);
@@ -105,17 +75,6 @@ function parseCommand(command: string): ParsedCommand {
   let foundCommandSubstitution = false;
   let writesFiles = false;
 
-  const REDIRECTION_OPS = new Set([
-    ">",
-    "<",
-    ">>",
-    ">&",
-    "<&",
-    ">|",
-    "<>",
-    "&>",
-    "&>>",
-  ]);
   let pendingOutputRedirect = false;
 
   for (let i = 0; i < tokens.length; i++) {
@@ -139,7 +98,7 @@ function parseCommand(command: string): ParsedCommand {
     } else if (token && typeof token === "object") {
       if ("op" in token) {
         const op = token.op as string;
-        if (REDIRECTION_OPS.has(op)) {
+        if (ALL_REDIRECTION_OPS.has(op)) {
           if (OUTPUT_REDIRECTION_OPS.has(op)) {
             pendingOutputRedirect = true;
           } else {
@@ -153,7 +112,6 @@ function parseCommand(command: string): ParsedCommand {
             }
           }
         } else {
-          const COMMAND_SEPARATORS = new Set(["|", "&&", "||", ";", "&"]);
           if (COMMAND_SEPARATORS.has(op)) {
             if (currentSegment.length > 0) {
               segments.push(currentSegment);

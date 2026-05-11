@@ -2,7 +2,7 @@
  * High level classification - network, deployment, dangerous shell execution
  */
 
-import { getCommandName } from "./index.js";
+import { getCommandName } from "./index";
 
 // ============================================================================
 // LEVEL CHECK

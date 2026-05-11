@@ -8,8 +8,8 @@ import type {
   PermissionConfig,
   PermissionLevel,
   PermissionMode,
-} from "./types.js";
-import { LEVELS, PERMISSION_MODES, validateConfig } from "./types.js";
+} from "./types";
+import { LEVELS, PERMISSION_MODES, validateConfig } from "./types";
 
 // ============================================================================
 // SETTINGS FILE I/O

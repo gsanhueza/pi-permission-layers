@@ -2,7 +2,7 @@
  * Medium level classification - dev ops, builds, tests, package installs
  */
 
-import { getCommandName } from "./index.js";
+import { getCommandName } from "./index";
 
 const MEDIUM_PACKAGE_PATTERNS: Array<[string, RegExp]> = [
   [

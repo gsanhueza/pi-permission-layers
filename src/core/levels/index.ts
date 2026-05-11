@@ -5,9 +5,9 @@
  * The classifier.ts file imports these and composes them into the full pipeline.
  */
 
-export { isMinimalLevel, extractXargsCommand } from "./minimal.js";
-export { isMediumLevel, isSafeRunScript } from "./medium.js";
-export { isHighLevel } from "./high.js";
+export { isHighLevel } from "./high";
+export { isMediumLevel, isSafeRunScript } from "./medium";
+export { extractXargsCommand, isMinimalLevel } from "./minimal";
 
 /**
  * Shared helper used by all level classifiers and the main pipeline.

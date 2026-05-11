@@ -2,8 +2,7 @@
  * Minimal level classification - read-only, version checks, safe commands
  */
 
-import type { PermissionLevel } from "../types.js";
-import { getCommandName } from "./index.js";
+import { getCommandName } from "./index";
 
 // Broad set of /dev/* paths that count as minimal-level tokens
 const REDIRECTION_TARGETS = new Set([
