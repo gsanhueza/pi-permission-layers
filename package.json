@@ -32,13 +32,13 @@
     ]
   },
   "peerDependencies": {
-    "@mariozechner/pi-coding-agent": ">=0.50.0"
+    "@earendil-works/pi-coding-agent": "*"
   },
   "dependencies": {
     "shell-quote": "^1.8.3"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/shell-quote": "^1.7.5",
     "prettier-plugin-organize-imports": "^4.3.0"
   }
