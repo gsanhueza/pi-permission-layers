@@ -1,0 +1,45 @@
+{
+  "name": "pi-permission-layers",
+  "version": "1.0.12",
+  "description": "Pi extension to handle permissions using a layered approach",
+  "keywords": [
+    "pi",
+    "pi-package",
+    "pi-extension",
+    "permission"
+  ],
+  "author": "Gabriel Sanhueza",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gsanhueza/pi-permission-layers.git"
+  },
+  "homepage": "https://github.com/gsanhueza/pi-permission-layers#readme",
+  "bugs": {
+    "url": "https://github.com/gsanhueza/pi-permission-layers/issues"
+  },
+  "pi": {
+    "extensions": [
+      "./src/permission.js"
+    ]
+  },
+  "scripts": {
+    "test": "npx tsx tests/permission.test.ts && npx tsx tests/permission-prompt.test.ts"
+  },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-organize-imports"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": ">=0.50.0"
+  },
+  "dependencies": {
+    "shell-quote": "^1.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/shell-quote": "^1.7.5",
+    "prettier-plugin-organize-imports": "^4.3.0"
+  }
+}
