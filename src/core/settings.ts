@@ -9,7 +9,48 @@ import type {
   PermissionLevel,
   PermissionMode,
 } from "./types";
-import { LEVELS, PERMISSION_MODES, validateConfig } from "./types";
+import { LEVELS, PERMISSION_MODES } from "./types";
+
+// ============================================================================
+// CONFIG VALIDATION
+// ============================================================================
+
+function validateConfig(raw: PermissionConfig): PermissionConfig {
+  if (!raw || typeof raw !== "object") return {};
+
+  const result: PermissionConfig = {};
+  const overrides = raw.overrides as Record<string, unknown> | undefined;
+
+  if (overrides && typeof overrides === "object") {
+    result.overrides = {};
+    const levels = ["minimal", "low", "medium", "high", "dangerous"] as const;
+    for (const level of levels) {
+      const patterns = overrides[level];
+      if (Array.isArray(patterns)) {
+        const valid = patterns
+          .filter((p): p is string => typeof p === "string" && p.length > 0)
+          .slice(0, 100);
+        if (valid.length > 0) result.overrides[level] = valid;
+      }
+    }
+  }
+
+  if (Array.isArray(raw.prefixMappings)) {
+    const valid = raw.prefixMappings
+      .filter(
+        (m): m is { from: string; to: string } =>
+          m &&
+          typeof m === "object" &&
+          typeof (m as any).from === "string" &&
+          (m as any).from.length > 0 &&
+          typeof (m as any).to === "string",
+      )
+      .slice(0, 50);
+    if (valid.length > 0) result.prefixMappings = valid;
+  }
+
+  return result;
+}
 
 // ============================================================================
 // SETTINGS FILE I/O
@@ -94,7 +135,7 @@ export function saveGlobalPermissionMode(mode: PermissionMode): void {
 
 export function loadPermissionConfig(): PermissionConfig {
   const settings = loadSettings();
-  return validateConfig(settings.permissionConfig);
+  return validateConfig(settings.permissionConfig as PermissionConfig);
 }
 
 export function savePermissionConfig(config: PermissionConfig): void {
