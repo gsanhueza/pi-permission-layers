@@ -3,7 +3,7 @@
  */
 
 import { parse } from "shell-quote";
-import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./config";
+import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./tools";
 import {
   ALL_REDIRECTION_OPS,
   COMMAND_SEPARATORS,

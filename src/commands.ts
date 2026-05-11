@@ -2,7 +2,7 @@
  * Command handlers - /permission and /permission-mode
  */
 
-import { invalidateConfigCache } from "./core/config";
+import { invalidateConfigCache } from "./core/tools";
 import { loadPermissionConfig, savePermissionConfig } from "./core/settings";
 import type {
   PermissionLevel,

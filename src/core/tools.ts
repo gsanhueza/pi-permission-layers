@@ -1,7 +1,3 @@
-/**
- * PermissionConfig management - validation, caching, loading/saving
- */
-
 import { loadPermissionConfig } from "./settings.js";
 import type { Classification, PermissionConfig } from "./types.js";
 
