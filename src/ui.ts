@@ -3,9 +3,7 @@
  */
 
 import { execFile } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { getCachedConfig } from "./core/tools";
 import type { PermissionLevel } from "./core/types";
 import { LEVEL_INFO } from "./core/types";
 
@@ -75,14 +73,8 @@ export function isQuietMode(ctx: any): boolean {
 }
 
 function isQuietStartupFromSettings(): boolean {
-  const settingsPath = path.join(os.homedir(), ".pi", "agent", "settings.json");
-  try {
-    const raw = fs.readFileSync(settingsPath, "utf-8");
-    const settings = JSON.parse(raw) as { quietStartup?: boolean };
-    return settings.quietStartup === true;
-  } catch {
-    return false;
-  }
+  const settings = getCachedConfig();
+  return settings.quietStartup === true;
 }
 
 // ============================================================================

@@ -79,6 +79,7 @@ export interface PermissionConfig {
     from: string;
     to: string;
   }>;
+  quietStartup?: boolean;
 }
 
 // ============================================================================

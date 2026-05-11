@@ -49,6 +49,8 @@ function validateConfig(raw: PermissionConfig): PermissionConfig {
     if (valid.length > 0) result.prefixMappings = valid;
   }
 
+  result.quietStartup = raw.quietStartup ?? false;
+
   return result;
 }
 

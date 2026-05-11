@@ -107,7 +107,8 @@ Global settings stored in `~/.pi/agent/settings.json`:
       { "from": "nvm exec", "to": "" },
       { "from": "rbenv exec", "to": "" },
       { "from": "pyenv exec", "to": "" }
-    ]
+    ],
+    "quietStartup": true
   }
 }
 ```
