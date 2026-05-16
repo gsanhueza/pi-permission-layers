@@ -1,24 +1,8 @@
 # pi-permission-layers
 
-A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permission control extension to protect users from unintended operations.
+A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permission control extension to protect users from unintended operations. It classifies shell commands into 5 security levels and enforces them at runtime, with configurable overrides and two permission modes (`ask` / `block`).
 
 > **Note**: This project is a refactored fork. See the [Acknowledgements](#acknowledgements) section for lineage and credits. The goal of this fork is to have a more maintainable codebase while preserving the same core idea, and to adjust a few things deemed useful to me.
-
-## What This Project Is
-
-A TypeScript extension that adds permission-based command filtering to the pi coding agent. It classifies shell commands into 5 security levels and enforces them at runtime, with configurable overrides and two permission modes (`ask` / `block`).
-
-## Levels
-
-| Level | Description | Allowed Operations |
-|-------|-------------|-------------------|
-| `minimal` | Read-only (default) | `ls`, `grep`, `cat`, `git status/diff/log`, `npm list`, etc. |
-| `low` | File operations | Create/edit files, `mkdir`, `cp`, `mv` |
-| `medium` | Development operations | `npm install`, `npm build/test`, `git commit/pull`, builds |
-| `high` | Full operations | `git push`, deployments, `curl`, `docker push`, `kubectl` |
-| `bypassed` | All checks disabled | Everything (dangerous — CI/containers only) |
-
-**Dangerous commands** (always prompt, even at `high`): `sudo`, `rm -rf`, `chmod 777`, `dd`, `mkfs`, `shutdown`/`reboot`
 
 ## Key Features
 
@@ -31,14 +15,41 @@ A TypeScript extension that adds permission-based command filtering to the pi co
 - **Prefix mappings** — Normalize version-manager commands (`fvm flutter`, `nvm exec`, etc.) to their base tools
 - **Terminal awareness** — Detects tmux/screen for appropriate notifications
 
+## Levels
+
+| Level | Description | Allowed Operations |
+|-------|-------------|-------------------|
+| `minimal` | Read-only (default) | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc. |
+| `low` | File operations | Create/edit files, `mkdir`, `cp`, `mv`, output redirection |
+| `medium` | Development operations | `npm install`, builds, tests, `git commit/pull`, linters, package managers |
+| `high` | Full operations | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.) |
+| `bypassed` | All checks disabled | Everything (dangerous — CI/containers only) |
+
+**Dangerous commands** (always prompt, even at `high`): `sudo`, `rm -rf`, `chmod 777`, `dd of=/dev/*`, `mkfs*`, `fdisk`, `parted`, `format`, `shutdown`, `reboot`, `halt`, `poweroff`, `init`, fork bombs
+
+**Shell tricks** (always classified as `high`): `$(cmd)`, backticks, `<(cmd)`, `>(cmd)`, `${VAR:-$(cmd)}`
+
+See [docs/command-classification.md](docs/command-classification.md) for the complete classification reference.
+
+## Installation
+
+This package is a Pi extension. Install it with
+
+```bash
+npm install pi-permission-layers
+```
+
+or
+
+```bash
+pi install https://github.com/gsanhueza/pi-permission-layers
+```
+
 ## Usage
 
 ### Interactive Mode
 
-```bash
-# Extension loads automatically from ~/.pi/agent/extensions/ or .pi/extensions/
-pi
-```
+Interactive mode enables the usage of the following commands:
 
 **Commands:**
 - `/permission` — Show selector to change level
@@ -86,10 +97,11 @@ The agent can then work around the limitation or inform the user.
 | Variable | Values | Description |
 |----------|--------|-------------|
 | `PI_PERMISSION_LEVEL` | `minimal`, `low`, `medium`, `high`, `bypassed` | Set permission level |
+| `PI_QUIET` | `1`, `true`, `yes` | Suppress startup notifications |
 
 ## Settings
 
-Global settings stored in `~/.pi/agent/settings.json`:
+Global settings are stored in `~/.pi/agent/settings.json`:
 
 ```json
 {
@@ -117,7 +129,7 @@ Global settings stored in `~/.pi/agent/settings.json`:
 
 ### Override Patterns
 
-Glob patterns matched against the full command:
+Glob patterns are matched against the full command:
 - `*` matches any characters
 - `?` matches single character
 - Patterns are case-insensitive
@@ -168,94 +180,12 @@ Normalize version manager commands to their base tools:
 2. If a prefix matches, it's replaced with the mapped value
 3. The normalized command is then classified
 
-## Command Classification
-
-The principle: **building/installing is MEDIUM, running code is HIGH**.
-
-### Minimal Level (Read-only)
-- File reading: `cat`, `less`, `head`, `tail`, `bat`
-- Directory: `ls`, `tree`, `pwd`, `find`, `fd`
-- Search: `grep`, `rg`, `ag`
-- Info: `echo`, `whoami`, `date`, `uname`, `ps`, `env`
-- Git read: `git status`, `git log`, `git diff`, `git show`, `git branch`, `git fetch`
-- Package info: `npm list`, `pip list`, `cargo tree`
-
-### Medium Level (Build/Install/Test — Reversible)
-- **Node.js**: `npm install/ci/test/build`, `yarn install/add/build/test`, `pnpm`, `bun`
-- **npm run** (safe scripts only): `build`, `test`, `lint`, `format`, `check`, `typecheck`
-- **Python**: `pip install`, `poetry install/build`, `pytest`
-- **Rust**: `cargo build/test/check/clippy/fmt` (NOT `cargo run`)
-- **Go**: `go build/test/get/mod` (NOT `go run`)
-- **Ruby**: `gem install`, `bundle install`
-- **CocoaPods**: `pod install`, `pod update`, `pod repo update`
-- **PHP**: `composer install`
-- **Java**: `mvn compile/test`, `gradle build/test`
-- **.NET**: `dotnet build/test`
-- **Git local**: `git add`, `git commit`, `git pull`, `git checkout`, `git merge`, `git clone`
-- **Build tools**: `make`, `cmake`, `ninja`
-- **Linters** (static analysis — only check/report, no execution):
-  - **JS/TS**: `eslint`, `prettier`, `tsc --noEmit`, `tslint`, `standard`, `xo`
-  - **Python**: `pylint`, `flake8`, `black`, `mypy`, `pyright`, `ruff`, `pyflakes`, `bandit`
-  - **Rust**: `cargo clippy`, `cargo fmt`, `rustfmt`
-  - **Go**: `gofmt`, `go vet`, `golangci-lint`, `golint`, `staticcheck`, `errcheck`, `misspell`
-  - **Ruby**: `rubocop`, `standardrb`, `reek`, `brakeman`
-  - **Swift**: `swiftlint`, `swiftformat`
-  - **Kotlin**: `ktlint`, `detekt`
-  - **Dart/Flutter**: `dart analyze`, `flutter analyze`, `dart format`, `flutter format`
-  - **C/C++**: `clang-tidy`, `clang-format`, `cppcheck`
-  - **Java**: `checkstyle`, `pmd`, `spotbugs`, `error-prone`
-  - **C#**: `dotnet format`, `dotnet build -t:RunCodeAnalysis`
-  - **PHP**: `phpcs`, `phpmd`, `phpstan`, `psalm`, `php-cs-fixer`
-  - **Lua**: `luacheck`
-  - **Shell**: `shellcheck`
-  - **IaC**: `checkov`, `tflint`, `terraform validate`
-  - **Protobuf**: `buf lint`, `protoc --lint`
-  - **SQL**: `sqlfluff`
-  - **YAML**: `yamllint`
-  - **Markdown**: `markdownlint`
-  - **HTML/Django**: `djlint`, `djhtml`
-  - **Git**: `commitlint`
-- **File ops**: `mkdir`, `touch`, `cp`, `mv`
-
-### High Level (Runs Code / Irreversible)
-- **Running code**: `python script.py`, `node app.js`, `cargo run`, `go run`
-- **npm run** (unsafe scripts): `dev`, `start`, `serve`, `watch`, `preview`
-- **Package executors**: `npx`, `bunx`, `pnpx` (run arbitrary packages)
-- **Git remote**: `git push`, `git push --force`
-- **Git irreversible**: `git reset --hard`, `git clean`, `git restore`
-- **Network**: `curl`, `wget` (can't verify trusted endpoints)
-- **Deployment**: `docker push`, `kubectl`, `helm`, `terraform`
-- **Remote access**: `ssh`, `scp`, `rsync`
-- **Shell execution**: `eval`, `exec`, `source`, `xargs`
-
-### Dangerous (Always Prompt)
-- `sudo` (any form)
-- `rm` with `-r` AND `-f` flags
-- `chmod 777` or `a+rwx`
-- `dd of=/dev/...`
-- `mkfs`, `mkfs.ext4`, `fdisk`, `parted`
-- `shutdown`, `reboot`, `halt`, `poweroff`
-
-## Shell Trick Detection
-
-Commands containing these patterns require HIGH permission:
-- Command substitution: `$(cmd)`, `` `cmd` ``
-- Process substitution: `<(cmd)`, `>(cmd)`
-- Dangerous expansions: `${VAR:-$(cmd)}` (nested command substitution)
-
 ## Testing
 
 Run tests with:
 
 ```bash
-npm test
-```
-
-Or individually:
-
-```bash
-npx tsx tests/permission.test.ts
-npx tsx tests/permission-prompt.test.ts
+npm run test
 ```
 
 ### Test Structure
@@ -266,72 +196,20 @@ npx tsx tests/permission-prompt.test.ts
   - Tests shell tricks (`$()`, backticks, `eval`)
   - Tests config overrides and prefix mappings
 
-- **permission-prompt.test.ts** — Tests UI handler functions
+- **permission-prompt.test.ts** (610 lines) — Tests UI handler functions
   - Tests prompt messages and options
   - Tests Allow/Cancel/Block behavior
   - Tests block mode vs ask mode
 
-> **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm test` before committing.
-
-## Building
-
-```bash
-npm run build    # TypeScript compilation
-npm test         # Run tests
-```
-
-Output goes to `dist/`.
+> **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm run test` before committing.
 
 ## Architecture
 
-### Major Files
-
-```
-src/
-├── permission-core.ts      # Core logic: command classification, config, settings
-├── permission.ts           # Extension entry point, handlers, UI prompts
-
-tests/
-├── permission.test.ts      # Command classification tests (~1400 lines)
-├── permission-prompt.test.ts  # UI prompt behavior tests
-```
-
-### permission-core.ts
-
-Pure functions for:
-- `classifyCommand()` — Determines permission level for any shell command
-- `parseCommand()` — Shell parsing with operator detection
-- Config/cache management functions
-
-### permission.ts
-
-Extension hooks and handlers:
-- `handleBashToolCall()` — Bash command permission checks
-- `handleWriteToolCall()` — File write/edit permission checks
-- `handleMcpToolCall()` — MCP tool call permission checks
-- `handlePermissionCommand()` — `/permission` slash command
-- `handlePermissionModeCommand()` — `/permission-mode` slash command
-
-### Design Notes
-
-- Uses [`shell-quote`](https://www.npmjs.com/package/shell-quote) for command parsing
-- Caches compiled regex patterns for performance
-- Handles tmux/screen terminal detection for notifications
-- Supports both interactive and print mode (`-p`) execution
-
-## Installation
-
-Install the package and enable extensions:
-```bash
-pi install npm:pi-permission-layers
-pi config
-```
-
-Dependencies are installed automatically during `pi install`.
+See [docs/architecture.md](docs/architecture.md) for a complete breakdown of the codebase structure, module responsibilities, and design decisions.
 
 # Acknowledgements
 
 This project is a fork of:
 
-1. **[pi-permission](https://github.com/SecKatie/pi-permission)** — the immediate parent, which added MCP tool permissioning and expanded classification (archived project).
-2. **[permission-pi](https://github.com/prateekmedia/pi-hooks/tree/main/permission)** — the original extension that established the layered permission control concept.
+1. **[pi-permission](https://github.com/SecKatie/pi-permission)** — the starting point of this fork, which added MCP tool permissioning and expanded classification (archived project).
+2. **[permission-pi](https://github.com/prateekmedia/pi-hooks/tree/main/permission)** — the original extension that established the layered permission control concept (the starting point of the fork above).
