@@ -27,13 +27,20 @@ export {
   type PermissionMode,
 };
 
+import {
+  ExtensionContext,
+  ToolCallEvent,
+} from "@earendil-works/pi-coding-agent";
 import { PermissionState } from "./core/types";
 
 // ============================================================================
 // SESSION START
 // ============================================================================
 
-export function handleSessionStart(state: PermissionState, ctx: any): void {
+export function handleSessionStart(
+  state: PermissionState,
+  ctx: ExtensionContext,
+): void {
   const envLevel = process.env.PI_PERMISSION_LEVEL?.toLowerCase();
   if (envLevel && LEVELS.includes(envLevel as PermissionLevel)) {
     state.currentLevel = envLevel as PermissionLevel;
@@ -77,9 +84,9 @@ export function handleSessionStart(state: PermissionState, ctx: any): void {
 // ============================================================================
 
 export async function handleToolCall(
-  event: any,
-  ctx: any,
-  state: any,
+  event: ToolCallEvent,
+  ctx: ExtensionContext,
+  state: PermissionState,
 ): Promise<any> {
   if (event.toolName === "bash") {
     return handleBashToolCall(state, event.input.command as string, ctx);

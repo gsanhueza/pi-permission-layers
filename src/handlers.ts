@@ -2,6 +2,7 @@
  * Tool call handlers - bash, mcp, write/edit, unknown tools
  */
 
+import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { classifyCommand } from "./core/classifier";
 import type {
   PermissionLevel,
@@ -20,7 +21,7 @@ import { hasInteractiveUI, notifySystem, truncate } from "./ui";
 async function handleDangerousCommand(
   command: string,
   state: PermissionState,
-  ctx: any,
+  ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> {
   await notifySystem("⚠️ Permission Required", `Dangerous command: ${command}`);
 
@@ -136,7 +137,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 export async function handleBashToolCall(
   state: PermissionState,
   command: string,
-  ctx: any,
+  ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> {
   if (state.currentLevel === "bypassed") return undefined;
 
@@ -225,7 +226,7 @@ const MCP_READ_ONLY_MODES = new Set([
 export async function handleMcpToolCall(
   state: PermissionState,
   input: Record<string, any>,
-  ctx: any,
+  ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> {
   let targetTool: string;
   let mode: string;

@@ -2,6 +2,7 @@
  * PermissionState management - create, set level, set mode
  */
 
+import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
   saveGlobalPermission,
   saveGlobalPermissionMode,
@@ -26,7 +27,7 @@ export function setLevel(
   state: PermissionState,
   level: PermissionLevel,
   saveGlobally: boolean,
-  ctx: any,
+  ctx: ExtensionContext,
 ): void {
   state.currentLevel = level;
   state.isSessionOnly = !saveGlobally;
@@ -42,7 +43,7 @@ export function setMode(
   state: PermissionState,
   mode: PermissionMode,
   saveGlobally: boolean,
-  ctx: any,
+  ctx: ExtensionContext,
 ): void {
   state.permissionMode = mode;
   state.isModeSessionOnly = !saveGlobally;

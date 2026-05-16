@@ -2,6 +2,7 @@
  * UI helpers - status text, mode detection, terminal focus, system notifications
  */
 
+import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { execFile } from "node:child_process";
 import { getCachedConfig } from "./core/tools";
 import type { PermissionLevel } from "./core/types";
@@ -49,7 +50,7 @@ export function getPiModeFromArgv(
   return undefined;
 }
 
-export function hasInteractiveUI(ctx: any): boolean {
+export function hasInteractiveUI(ctx: ExtensionContext): boolean {
   if (!ctx?.hasUI) return false;
 
   const mode = getPiModeFromArgv()?.toLowerCase();
@@ -58,11 +59,7 @@ export function hasInteractiveUI(ctx: any): boolean {
   return true;
 }
 
-export function isQuietMode(ctx: any): boolean {
-  if (ctx?.quiet || ctx?.isQuiet) return true;
-  if (ctx?.ui?.quiet || ctx?.ui?.isQuiet) return true;
-  if (ctx?.settings?.quietStartup || ctx?.settings?.quiet) return true;
-
+export function isQuietMode(_ctx: ExtensionContext): boolean {
   const envQuiet = process.env.PI_QUIET?.toLowerCase();
   if (envQuiet && ["1", "true", "yes"].includes(envQuiet)) return true;
 

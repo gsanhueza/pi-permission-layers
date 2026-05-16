@@ -1,5 +1,5 @@
-import { loadPermissionConfig } from "./settings.js";
-import type { Classification, PermissionConfig } from "./types.js";
+import { loadPermissionConfig } from "./settings";
+import type { Classification, PermissionConfig } from "./types";
 
 // ============================================================================
 // CONFIGURATION CACHING

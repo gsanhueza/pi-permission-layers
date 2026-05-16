@@ -4,8 +4,8 @@
  * Run with: npm test
  */
 
-import { classifyCommand } from "../src/core/classifier.js";
-import { type PermissionConfig } from "../src/core/types.js";
+import { classifyCommand } from "../src/core/classifier";
+import { type PermissionConfig } from "../src/core/types";
 
 // ============================================================================
 // Test runner

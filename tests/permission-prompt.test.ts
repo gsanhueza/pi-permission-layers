@@ -11,8 +11,8 @@ import {
   handleBashToolCall,
   handleMcpToolCall,
   handleWriteToolCall,
-} from "../src/handlers.js";
-import { createInitialState } from "../src/state.js";
+} from "../src/handlers";
+import { createInitialState } from "../src/state";
 
 // ============================================================================
 // Test runner (same pattern as permission.test.ts)

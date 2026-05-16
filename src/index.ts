@@ -32,7 +32,13 @@
  *
  */
 
-import { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+  ExtensionAPI,
+  ExtensionCommandContext,
+  ExtensionContext,
+  SessionStartEvent,
+  ToolCallEvent,
+} from "@earendil-works/pi-coding-agent";
 import {
   handlePermissionCommand,
   handlePermissionModeCommand,
@@ -45,21 +51,24 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
-    handler: (args: string, ctx: any) =>
+    handler: (args: string, ctx: ExtensionCommandContext) =>
       handlePermissionCommand(state, args, ctx),
   });
 
   pi.registerCommand("permission-mode", {
     description: "Set permission prompt mode (ask or block)",
-    handler: (args: string, ctx: any) =>
+    handler: (args: string, ctx: ExtensionCommandContext) =>
       handlePermissionModeCommand(state, args, ctx),
   });
 
-  pi.on("session_start", async (_event: any, ctx: any) => {
-    handleSessionStart(state, ctx);
-  });
+  pi.on(
+    "session_start",
+    async (_event: SessionStartEvent, ctx: ExtensionContext) => {
+      handleSessionStart(state, ctx);
+    },
+  );
 
-  pi.on("tool_call", async (event: any, ctx: any) => {
+  pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {
     return handleToolCall(event, ctx, state);
   });
 }

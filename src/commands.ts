@@ -2,8 +2,9 @@
  * Command handlers - /permission and /permission-mode
  */
 
-import { invalidateConfigCache } from "./core/tools";
+import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { loadPermissionConfig, savePermissionConfig } from "./core/settings";
+import { invalidateConfigCache } from "./core/tools";
 import type {
   PermissionLevel,
   PermissionMode,
@@ -25,7 +26,7 @@ import { hasInteractiveUI } from "./ui";
 async function handleConfigSubcommand(
   state: PermissionState,
   args: string,
-  ctx: any,
+  ctx: ExtensionCommandContext,
 ): Promise<void> {
   const parts = args.trim().split(/\s+/);
   const action = parts[0];
@@ -73,7 +74,7 @@ Edit ~/.pi/agent/settings.json directly for full control:
 export async function handlePermissionCommand(
   state: PermissionState,
   args: string,
-  ctx: any,
+  ctx: ExtensionCommandContext,
 ): Promise<void> {
   const arg = args.trim().toLowerCase();
 
@@ -147,7 +148,7 @@ export async function handlePermissionCommand(
 export async function handlePermissionModeCommand(
   state: PermissionState,
   args: string,
-  ctx: any,
+  ctx: ExtensionCommandContext,
 ): Promise<void> {
   const arg = args.trim().toLowerCase();
 

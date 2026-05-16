@@ -2,6 +2,8 @@
  * Types and constants for permission system
  */
 
+import { ExtensionContext } from "@earendil-works/pi-coding-agent";
+
 // ============================================================================
 // CORE TYPES
 // ============================================================================
@@ -110,7 +112,7 @@ export interface WriteToolCallOptions {
   state: PermissionState;
   toolName: string;
   filePath: string;
-  ctx: any;
+  ctx: ExtensionContext;
 }
 
 export interface PermissionRequestOptions {
@@ -120,5 +122,5 @@ export interface PermissionRequestOptions {
   details: string;
   notifyTitle: string;
   envVarHint: string;
-  ctx: any;
+  ctx: ExtensionContext;
 }
