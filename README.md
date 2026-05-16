@@ -20,12 +20,12 @@ A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permiss
 | Level | Description | Allowed Operations |
 |-------|-------------|-------------------|
 | `minimal` | Read-only (default) | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc. |
-| `low` | File operations | Create/edit files, `mkdir`, `cp`, `mv`, output redirection |
-| `medium` | Development operations | `npm install`, builds, tests, `git commit/pull`, linters, package managers |
+| `low` | File operations | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools |
+| `medium` | Development operations | Create/edit files (`mkdir`, `cp`, `mv`, `ln`), `npm install`, builds, tests, `git commit/pull`, linters, package managers |
 | `high` | Full operations | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.) |
 | `bypassed` | All checks disabled | Everything (dangerous — CI/containers only) |
 
-**Dangerous commands** (always prompt, even at `high`): `sudo`, `rm -rf`, `chmod 777`, `dd of=/dev/*`, `mkfs*`, `fdisk`, `parted`, `format`, `shutdown`, `reboot`, `halt`, `poweroff`, `init`, fork bombs
+**Dangerous commands** (always require confirmation in interactive mode, always blocked in print mode): `sudo`, `rm -rf`, `chmod 777`, `dd of=/dev/*`, `mkfs*`, `fdisk`, `parted`, `format`, `shutdown`, `reboot`, `halt`, `poweroff`, `init`, fork bombs
 
 **Shell tricks** (always classified as `high`): `$(cmd)`, backticks, `<(cmd)`, `>(cmd)`, `${VAR:-$(cmd)}`
 
@@ -58,14 +58,18 @@ Interactive mode enables the usage of the following commands:
 - `/permission-mode block` — Block instead of prompting
 - `/permission config show` — Display current configuration
 - `/permission config reset` — Reset to default (empty)
+- `/permission settings` — Interactive UI to toggle `quietStartup` / `forceUI` / `systemNotifications`
+
+**Autocomplete:** All commands support argument autocomplete. After typing the command name, press **Space** to see available values. Nested subcommands also autocomplete — e.g. `/permission config <space>` shows `show`/`reset`.
 
 **When a command needs higher permission:**
-```
-🔒 Requires Medium: npm install lodash
 
-  [Allow once]           → Execute this command only
-  [Allow all (Medium)]   → Update global settings and execute
-  [Cancel]               → Don't execute
+```
+[Requires Medium]: $ npm install lodash
+
+  Allow once                  → Execute this command once
+  Allow all Medium (session)  → Update the session's permissions and execute
+  Cancel                      → Don't execute
 ```
 
 If permission mode is set to `block`, commands requiring higher permission are blocked without prompting. Use `/permission-mode ask` to restore prompts.
@@ -85,9 +89,15 @@ PI_PERMISSION_LEVEL=bypassed pi -p "do anything"
 **If permission is insufficient:**
 The command is blocked but execution continues. The agent receives:
 ```
-Blocked by permission (minimal). Command: npm install lodash
-Allowed at this level: read-only (cat, ls, grep, git status/diff/log, npm list, version checks)
+$ npm install lodash
+Blocked by permission (minimal). Allowed at this level: Read-only
 User can re-run with: PI_PERMISSION_LEVEL=medium pi -p "..."
+```
+
+**If a dangerous command is used:**
+```
+Dangerous command requires confirmation: sudo rm -rf /tmp/foo
+User can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."
 ```
 
 The agent can then work around the limitation or inform the user.
@@ -98,6 +108,7 @@ The agent can then work around the limitation or inform the user.
 |----------|--------|-------------|
 | `PI_PERMISSION_LEVEL` | `minimal`, `low`, `medium`, `high`, `bypassed` | Set permission level |
 | `PI_QUIET` | `1`, `true`, `yes` | Suppress startup notifications |
+| `PI_FORCEUI` | `1`, `true`, `yes` | Force interactive UI mode |
 
 ## Settings
 
@@ -121,7 +132,8 @@ Global settings are stored in `~/.pi/agent/settings.json`:
       { "from": "pyenv exec", "to": "" }
     ],
     "quietStartup": true,
-    "forceUI": true
+    "forceUI": true,
+    "systemNotifications": "unfocused"
   }
 }
 ```
@@ -134,6 +146,9 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 |--------|------|---------|-------------|
 | `quietStartup` | `boolean` | `false` | Suppress the startup notification message |
 | `forceUI` | `boolean` | `false` | Force interactive UI mode regardless of context (e.g., in print mode) |
+| `systemNotifications` | `"off" \| "on" \| "unfocused" \| "persistent"` | `"unfocused"` | Control OS notifications (`"off"` = fully disabled, `"unfocused"` = only when terminal is not focused, `"on"` = always show, `"persistent"` = always show with critical/persistent priority) |
+
+> **Note on Linux:** Terminal focus detection is not supported on Linux, so the `"unfocused"` option behaves the same as `"on"` (notifications are always shown).
 
 ### Override Patterns
 
@@ -150,6 +165,8 @@ Override priority (highest to lowest):
 5. `minimal` — Allow at minimal (read-only)
 
 > **Note:** When a command matches patterns in multiple levels, the **most restrictive** level wins. Avoid overlapping patterns across levels. For example, don't put `tmux *` in medium if you want `tmux list-*` to be minimal.
+
+> **Note on the `low` level:** `low` is not a standalone command classification level (there is no `isLowLevel()` classifier). Instead, it serves as a permission threshold used for output redirections, write/edit tool calls, known read-only MCP tools, and as an override target. Commands like `mkdir`, `cp`, `mv`, `ln`, and `touch` are classified as `medium`, not `low`.
 
 **Examples:**
 ```json
@@ -204,10 +221,12 @@ npm run test
   - Tests shell tricks (`$()`, backticks, `eval`)
   - Tests config overrides and prefix mappings
 
-- **permission-prompt.test.ts** (610 lines) — Tests UI handler functions
+- **permission-prompt.test.ts** — Tests UI handler functions
   - Tests prompt messages and options
   - Tests Allow/Cancel/Block behavior
   - Tests block mode vs ask mode
+
+- **interactive-ui.test.ts** — Tests `hasInteractiveUI()`, `isQuietMode()`, `notifySystem()`, terminal detection, `systemNotifications` handling
 
 > **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm run test` before committing.
 
@@ -215,7 +234,7 @@ npm run test
 
 See [docs/architecture.md](docs/architecture.md) for a complete breakdown of the codebase structure, module responsibilities, and design decisions.
 
-# Acknowledgements
+## Acknowledgements
 
 This project is a fork of:
 

@@ -58,10 +58,14 @@ Read-only commands that don't modify files or execute code.
 
 ---
 
-## Low Level (File Operations)
+## Low Level (File Threshold)
 
-Any file write/edit operation (via write/edit tools) requires low.
-Output redirection (`>`, `>>`) to non-special files also requires low.
+**Note:** There is no dedicated `isLowLevel()` command classifier. The `low` level is used as a **permission threshold** rather than a direct command classification:
+
+- Output redirection (`>`, `>>`) to non-special files raises the minimum required level to `low`
+- `write` and `edit` tool calls require `low` permission
+- Known read-only MCP tools require `low` permission
+- `low` can be used as an override target in `permissionConfig.overrides`
 
 ---
 
@@ -170,13 +174,13 @@ Safe scripts are determined by prefix or exact match:
 
 `eval`, `exec`, `source`, `.`, `env`, `command`, `builtin`, `time`, `nice`, `nohup`, `timeout`, `watch`, `strace`
 
-### Conditional High
+### Conditional Classification
 
 | Scenario | Level |
 |---|---|
 | Pipeline where next command is `bash`, `sh`, `zsh`, `node`, `python`, `python3`, `ruby`, `perl` | High |
 | `xargs` running a non-minimal command | High (falls through default) |
-| Output redirection (`>`, `>>`) to non-special files | Low |
+| Output redirection (`>`, `>>`) to non-special files | Low (raises minimum from minimal) |
 
 ### Default High (Falls Through)
 
