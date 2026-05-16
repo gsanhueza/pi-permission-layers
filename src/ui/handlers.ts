@@ -182,7 +182,7 @@ export const handleWriteToolCall = async (
 
   return requestPermission({
     state,
-    message: `Requires Low: ${action} ${filePath}`,
+    message: `${action} ${filePath}`,
     requiredLevel: "low",
     details: `${action}`,
     notifyTitle: "Permission Required",
