@@ -43,10 +43,13 @@ import {
   handlePermissionCommand as handlePermissionCommand_noUI,
   handlePermissionModeCommand as handlePermissionModeCommand_noUI,
 } from "./no-ui/commands";
-import { handleSessionStart as handleSessionStart_noUI } from "./no-ui/events";
 import {
-  handlePermissionCommand as handlePermissionCommand_UI,
-  handlePermissionModeCommand as handlePermissionModeCommand_UI,
+  handleSessionStart as handleSessionStart_noUI,
+  handleToolCall as handleToolCall_noUI,
+} from "./no-ui/events";
+import {
+  handlePermissionCommand,
+  handlePermissionModeCommand,
 } from "./ui/commands";
 import { handleSessionStart, handleToolCall } from "./ui/events";
 import { createInitialState } from "./ui/state";
@@ -55,38 +58,45 @@ import { hasInteractiveUI } from "./ui/ui";
 export default (pi: ExtensionAPI) => {
   const state = createInitialState();
 
+  // Route UI vs no-UI handlers based on interactive context
+  const dispatch = <T>(ctx: ExtensionContext, ui: () => T, noUi: () => T): T =>
+    hasInteractiveUI(ctx) ? ui() : noUi();
+
   pi.registerCommand("permission", {
     description: "View or change permission level",
-    handler: (args: string, ctx: ExtensionCommandContext) => {
-      if (hasInteractiveUI(ctx)) {
-        return handlePermissionCommand_UI(state, args, ctx);
-      }
-      return handlePermissionCommand_noUI(state, args, ctx);
-    },
+    handler: (args: string, ctx: ExtensionCommandContext) =>
+      dispatch(
+        ctx,
+        () => handlePermissionCommand(state, args, ctx),
+        () => handlePermissionCommand_noUI(state, args, ctx),
+      ),
   });
 
   pi.registerCommand("permission-mode", {
     description: "Set permission prompt mode (ask or block)",
-    handler: (args: string, ctx: ExtensionCommandContext) => {
-      if (hasInteractiveUI(ctx)) {
-        return handlePermissionModeCommand_UI(state, args, ctx);
-      }
-      return handlePermissionModeCommand_noUI(state, args, ctx);
-    },
+    handler: (args: string, ctx: ExtensionCommandContext) =>
+      dispatch(
+        ctx,
+        () => handlePermissionModeCommand(state, args, ctx),
+        () => handlePermissionModeCommand_noUI(state, args, ctx),
+      ),
   });
 
   pi.on(
     "session_start",
-    async (_event: SessionStartEvent, ctx: ExtensionContext) => {
-      if (hasInteractiveUI(ctx)) {
-        handleSessionStart(state, ctx);
-      } else {
-        handleSessionStart_noUI(state);
-      }
-    },
+    async (_event: SessionStartEvent, ctx: ExtensionContext) =>
+      dispatch(
+        ctx,
+        () => handleSessionStart(state, ctx),
+        () => handleSessionStart_noUI(state),
+      ),
   );
 
-  pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {
-    return handleToolCall(event, ctx, state);
-  });
+  pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) =>
+    dispatch(
+      ctx,
+      () => handleToolCall(event, ctx, state),
+      () => handleToolCall_noUI(event, state),
+    ),
+  );
 };

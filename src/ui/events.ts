@@ -1,4 +1,3 @@
-import { handleToolCall as handleToolCall_noUI } from "../no-ui/events";
 import { initializeSessionState } from "../shared/events";
 import { isKnownReadTool } from "../shared/tools";
 import {
@@ -6,7 +5,7 @@ import {
   handleMcpToolCall,
   handleWriteToolCall,
 } from "../ui/handlers";
-import { getStatusText, hasInteractiveUI, isQuietMode } from "./ui";
+import { getStatusText, isQuietMode } from "./ui";
 
 import {
   ExtensionContext,
@@ -48,17 +47,6 @@ export const handleSessionStart = (
 // ============================================================================
 
 export const handleToolCall = async (
-  event: ToolCallEvent,
-  ctx: ExtensionContext,
-  state: PermissionState,
-): Promise<any> => {
-  if (hasInteractiveUI(ctx)) {
-    return handleToolCall_UI(event, ctx, state);
-  }
-  return handleToolCall_noUI(event, state);
-};
-
-const handleToolCall_UI = async (
   event: ToolCallEvent,
   ctx: ExtensionContext,
   state: PermissionState,
