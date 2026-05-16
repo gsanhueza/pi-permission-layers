@@ -8,7 +8,7 @@ import { getCommandName } from "./index";
 // LEVEL CHECK
 // ============================================================================
 
-export function isHighLevel(tokens: string[]): boolean {
+export const isHighLevel = (tokens: string[]): boolean => {
   if (tokens.length === 0) return false;
 
   const cmd = getCommandName(tokens);
@@ -33,4 +33,4 @@ export function isHighLevel(tokens: string[]): boolean {
   if (["ssh", "scp", "rsync"].includes(cmd)) return true;
 
   return false;
-}
+};

@@ -6,14 +6,14 @@
  */
 
 export { isHighLevel } from "./high";
-export { isMediumLevel, isSafeRunScript } from "./medium";
-export { extractXargsCommand, isMinimalLevel } from "./minimal";
+export { isMediumLevel } from "./medium";
+export { isMinimalLevel } from "./minimal";
 
 /**
  * Shared helper used by all level classifiers and the main pipeline.
  * Extracts the command name from a token array (handles paths, backslash escapes).
  */
-export function getCommandName(tokens: string[]): string {
+export const getCommandName = (tokens: string[]): string => {
   if (tokens.length === 0) return "";
 
   let cmd = tokens[0];
@@ -27,4 +27,4 @@ export function getCommandName(tokens: string[]): string {
   }
 
   return cmd.toLowerCase();
-}
+};

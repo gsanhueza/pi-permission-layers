@@ -28,19 +28,19 @@ const LEVEL_COLORS: Record<PermissionLevel, string> = {
   bypassed: DIM,
 };
 
-export function getStatusText(level: PermissionLevel): string {
+export const getStatusText = (level: PermissionLevel): string => {
   const info = LEVEL_INFO[level];
   const color = LEVEL_COLORS[level];
   return `${BOLD}${color}${info.label}${RESET} ${DIM}- ${info.desc}${RESET}`;
-}
+};
 
 // ============================================================================
 // MODE DETECTION
 // ============================================================================
 
-export function getPiModeFromArgv(
+const getPiModeFromArgv = (
   argv: string[] = process.argv,
-): string | undefined {
+): string | undefined => {
   const eq = argv.find((a) => a.startsWith("--mode="));
   if (eq) return eq.slice("--mode=".length);
 
@@ -48,18 +48,18 @@ export function getPiModeFromArgv(
   if (idx !== -1 && idx + 1 < argv.length) return argv[idx + 1];
 
   return undefined;
-}
+};
 
-export function hasInteractiveUI(ctx: ExtensionContext): boolean {
+export const hasInteractiveUI = (ctx: ExtensionContext): boolean => {
   if (!ctx?.hasUI) return false;
 
   const mode = getPiModeFromArgv()?.toLowerCase();
   if (mode && mode !== "interactive") return false;
 
   return true;
-}
+};
 
-export function isQuietMode(_ctx: ExtensionContext): boolean {
+export const isQuietMode = (_ctx: ExtensionContext): boolean => {
   const envQuiet = process.env.PI_QUIET?.toLowerCase();
   if (envQuiet && ["1", "true", "yes"].includes(envQuiet)) return true;
 
@@ -67,18 +67,18 @@ export function isQuietMode(_ctx: ExtensionContext): boolean {
     return true;
 
   return isQuietStartupFromSettings();
-}
+};
 
-function isQuietStartupFromSettings(): boolean {
+const isQuietStartupFromSettings = (): boolean => {
   const settings = getCachedConfig();
   return settings.quietStartup === true;
-}
+};
 
 // ============================================================================
 // TERMINAL FOCUS DETECTION
 // ============================================================================
 
-function detectTerminalBundleId(): string | null {
+const detectTerminalBundleId = (): string | null => {
   const bundleId = process.env.__CFBundleIdentifier;
   if (bundleId) return bundleId;
 
@@ -92,21 +92,21 @@ function detectTerminalBundleId(): string | null {
   if (process.env.TERM_PROGRAM === "vscode") return "com.microsoft.VSCode";
 
   return null;
-}
+};
 
 let _terminalBundleId: string | null | undefined;
-function getTerminalBundleId(): string | null {
+const getTerminalBundleId = (): string | null => {
   if (_terminalBundleId === undefined) {
     _terminalBundleId = detectTerminalBundleId();
   }
   return _terminalBundleId;
-}
+};
 
-function isTmux(): boolean {
+const isTmux = (): boolean => {
   return !!process.env.TMUX;
-}
+};
 
-async function isAppFocused(): Promise<boolean> {
+const isAppFocused = async (): Promise<boolean> => {
   if (process.platform !== "darwin") return true;
 
   const bundleId = getTerminalBundleId();
@@ -129,9 +129,9 @@ async function isAppFocused(): Promise<boolean> {
       },
     );
   });
-}
+};
 
-async function isTerminalFocused(): Promise<boolean> {
+const isTerminalFocused = async (): Promise<boolean> => {
   if (isTmux()) {
     return new Promise((resolve) => {
       execFile(
@@ -150,16 +150,16 @@ async function isTerminalFocused(): Promise<boolean> {
   }
 
   return isAppFocused();
-}
+};
 
 // ============================================================================
 // SYSTEM NOTIFICATIONS
 // ============================================================================
 
-export async function notifySystem(
+export const notifySystem = async (
   title: string,
   message: string,
-): Promise<void> {
+): Promise<void> => {
   const focused = await isTerminalFocused();
   if (focused) return;
 
@@ -176,13 +176,13 @@ export async function notifySystem(
   } catch {
     // Silently fail if notifications unavailable
   }
-}
+};
 
 // ============================================================================
 // UTILITY
 // ============================================================================
 
-export function truncate(s: string, maxLen = 80): string {
+export const truncate = (s: string, maxLen = 80): string => {
   const trimmed = s.trim();
   return trimmed.length > maxLen ? trimmed.slice(0, maxLen - 1) + "…" : trimmed;
-}
+};

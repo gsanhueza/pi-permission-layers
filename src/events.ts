@@ -37,10 +37,10 @@ import { PermissionState } from "./core/types";
 // SESSION START
 // ============================================================================
 
-export function handleSessionStart(
+export const handleSessionStart = (
   state: PermissionState,
   ctx: ExtensionContext,
-): void {
+): void => {
   const envLevel = process.env.PI_PERMISSION_LEVEL?.toLowerCase();
   if (envLevel && LEVELS.includes(envLevel as PermissionLevel)) {
     state.currentLevel = envLevel as PermissionLevel;
@@ -77,17 +77,17 @@ export function handleSessionStart(
       );
     }
   }
-}
+};
 
 // ============================================================================
 // TOOL CALL DISPATCHER
 // ============================================================================
 
-export async function handleToolCall(
+export const handleToolCall = async (
   event: ToolCallEvent,
   ctx: ExtensionContext,
   state: PermissionState,
-): Promise<any> {
+): Promise<any> => {
   if (event.toolName === "bash") {
     return handleBashToolCall(state, event.input.command as string, ctx);
   }
@@ -114,4 +114,4 @@ export async function handleToolCall(
   }
 
   return undefined;
-}
+};

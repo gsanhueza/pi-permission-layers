@@ -42,7 +42,7 @@ interface MockCtx {
   notifyCalls: NotifyCall[];
 }
 
-function makeCtx(selectResponse: string | null = "Cancel"): MockCtx {
+const makeCtx = (selectResponse: string | null = "Cancel"): MockCtx => {
   const selectCalls: SelectCall[] = [];
   const notifyCalls: NotifyCall[] = [];
 
@@ -61,19 +61,19 @@ function makeCtx(selectResponse: string | null = "Cancel"): MockCtx {
     selectCalls,
     notifyCalls,
   };
-}
+};
 
 /** State at minimal level (default) */
-function minimalState(): PermissionState {
+const minimalState = (): PermissionState => {
   return createInitialState(); // defaults to minimal
-}
+};
 
 /** State at a specific level */
-function stateAt(level: PermissionState["currentLevel"]): PermissionState {
+const stateAt = (level: PermissionState["currentLevel"]): PermissionState => {
   const s = createInitialState();
   s.currentLevel = level;
   return s;
-}
+};
 
 // ============================================================================
 // handleBashToolCall - command displayed in prompt

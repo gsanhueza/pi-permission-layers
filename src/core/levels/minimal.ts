@@ -164,7 +164,7 @@ const MINIMAL_PACKAGE_SUBCOMMANDS: Record<string, Set<string>> = {
 // HELPERS
 // ============================================================================
 
-export function extractXargsCommand(tokens: string[]): string | null {
+const extractXargsCommand = (tokens: string[]): string | null => {
   const args = tokens.slice(1);
   const OPTIONS_WITH_ARG = new Set([
     "-I",
@@ -222,13 +222,13 @@ export function extractXargsCommand(tokens: string[]): string | null {
   }
 
   return null;
-}
+};
 
 // ============================================================================
 // LEVEL CHECK
 // ============================================================================
 
-export function isMinimalLevel(tokens: string[]): boolean {
+export const isMinimalLevel = (tokens: string[]): boolean => {
   if (tokens.length === 0) return true;
 
   const cmd = getCommandName(tokens);
@@ -272,4 +272,4 @@ export function isMinimalLevel(tokens: string[]): boolean {
   }
 
   return false;
-}
+};

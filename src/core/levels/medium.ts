@@ -186,7 +186,7 @@ const UNSAFE_RUN_SCRIPTS = new Set([
 // HELPERS
 // ============================================================================
 
-export function isSafeRunScript(script: string): boolean {
+const isSafeRunScript = (script: string): boolean => {
   const s = script.toLowerCase();
   if (SAFE_RUN_SCRIPTS.has(s)) return true;
   if (
@@ -209,13 +209,13 @@ export function isSafeRunScript(script: string): boolean {
     return false;
   }
   return false;
-}
+};
 
 // ============================================================================
 // LEVEL CHECK
 // ============================================================================
 
-export function isMediumLevel(tokens: string[]): boolean {
+export const isMediumLevel = (tokens: string[]): boolean => {
   if (tokens.length === 0) return false;
 
   const cmd = getCommandName(tokens);
@@ -242,4 +242,4 @@ export function isMediumLevel(tokens: string[]): boolean {
   }
 
   return false;
-}
+};

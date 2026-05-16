@@ -46,7 +46,7 @@ import {
 import { handleSessionStart, handleToolCall } from "./events";
 import { createInitialState } from "./state";
 
-export default function (pi: ExtensionAPI) {
+export default (pi: ExtensionAPI) => {
   const state = createInitialState();
 
   pi.registerCommand("permission", {
@@ -71,4 +71,4 @@ export default function (pi: ExtensionAPI) {
   pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {
     return handleToolCall(event, ctx, state);
   });
-}
+};

@@ -18,11 +18,11 @@ import { hasInteractiveUI, notifySystem, truncate } from "./ui";
 // DANGEROUS COMMAND HANDLER
 // ============================================================================
 
-async function handleDangerousCommand(
+const handleDangerousCommand = async (
   command: string,
   state: PermissionState,
   ctx: ExtensionContext,
-): Promise<{ block: true; reason: string } | undefined> {
+): Promise<{ block: true; reason: string } | undefined> => {
   await notifySystem("⚠️ Permission Required", `Dangerous command: ${command}`);
 
   if (!hasInteractiveUI(ctx)) {
@@ -53,19 +53,21 @@ Use /permission-mode ask to enable confirmations.`,
     };
   }
   return undefined;
-}
+};
 
 // ============================================================================
 // PERMISSION REQUEST HELPER
 // ============================================================================
 
-async function requestPermission(opts: PermissionRequestOptions): Promise<
+const requestPermission = async (
+  opts: PermissionRequestOptions,
+): Promise<
   | {
       block: true;
       reason: string;
     }
   | undefined
-> {
+> => {
   const {
     state,
     message,
@@ -128,17 +130,17 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     block: true,
     reason: "Cancelled by the user. Do not attempt to repeat or circumvent.",
   };
-}
+};
 
 // ============================================================================
 // BASH TOOL HANDLER
 // ============================================================================
 
-export async function handleBashToolCall(
+export const handleBashToolCall = async (
   state: PermissionState,
   command: string,
   ctx: ExtensionContext,
-): Promise<{ block: true; reason: string } | undefined> {
+): Promise<{ block: true; reason: string } | undefined> => {
   if (state.currentLevel === "bypassed") return undefined;
 
   const classification = classifyCommand(command);
@@ -158,7 +160,7 @@ export async function handleBashToolCall(
     envVarHint: `pi -p "..."`,
     ctx,
   });
-}
+};
 
 // ============================================================================
 // MCP TOOL HANDLER
@@ -223,11 +225,11 @@ const MCP_READ_ONLY_MODES = new Set([
   "connect",
 ]);
 
-export async function handleMcpToolCall(
+export const handleMcpToolCall = async (
   state: PermissionState,
   input: Record<string, any>,
   ctx: ExtensionContext,
-): Promise<{ block: true; reason: string } | undefined> {
+): Promise<{ block: true; reason: string } | undefined> => {
   let targetTool: string;
   let mode: string;
 
@@ -278,15 +280,15 @@ export async function handleMcpToolCall(
     envVarHint: 'pi -p "..."',
     ctx,
   });
-}
+};
 
 // ============================================================================
 // WRITE/EDIT TOOL HANDLER
 // ============================================================================
 
-export async function handleWriteToolCall(
+export const handleWriteToolCall = async (
   opts: WriteToolCallOptions,
-): Promise<{ block: true; reason: string } | undefined> {
+): Promise<{ block: true; reason: string } | undefined> => {
   const { state, toolName, filePath, ctx } = opts;
 
   if (state.currentLevel === "bypassed") return undefined;
@@ -303,12 +305,12 @@ export async function handleWriteToolCall(
     envVarHint: 'pi -p "..."',
     ctx,
   });
-}
+};
 
 // ============================================================================
 // READ-ONLY TOOL CHECK
 // ============================================================================
 
-export function isKnownReadTool(toolName: string): boolean {
+export const isKnownReadTool = (toolName: string): boolean => {
   return KNOWN_READ_TOOLS.has(toolName);
-}
+};

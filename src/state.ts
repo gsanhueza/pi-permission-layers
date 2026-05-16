@@ -14,21 +14,21 @@ import type {
 } from "./core/types";
 import { getStatusText } from "./ui";
 
-export function createInitialState(): PermissionState {
+export const createInitialState = (): PermissionState => {
   return {
     currentLevel: "minimal",
     isSessionOnly: false,
     permissionMode: "ask",
     isModeSessionOnly: false,
   };
-}
+};
 
-export function setLevel(
+export const setLevel = (
   state: PermissionState,
   level: PermissionLevel,
   saveGlobally: boolean,
   ctx: ExtensionContext,
-): void {
+): void => {
   state.currentLevel = level;
   state.isSessionOnly = !saveGlobally;
   if (saveGlobally) {
@@ -37,17 +37,17 @@ export function setLevel(
   if (ctx.ui?.setStatus) {
     ctx.ui.setStatus("authority", getStatusText(level));
   }
-}
+};
 
-export function setMode(
+export const setMode = (
   state: PermissionState,
   mode: PermissionMode,
   saveGlobally: boolean,
   ctx: ExtensionContext,
-): void {
+): void => {
   state.permissionMode = mode;
   state.isModeSessionOnly = !saveGlobally;
   if (saveGlobally) {
     saveGlobalPermissionMode(mode);
   }
-}
+};

@@ -23,11 +23,11 @@ import { hasInteractiveUI } from "./ui";
 // /permission COMMAND
 // ============================================================================
 
-async function handleConfigSubcommand(
+const handleConfigSubcommand = async (
   state: PermissionState,
   args: string,
   ctx: ExtensionCommandContext,
-): Promise<void> {
+): Promise<void> => {
   const parts = args.trim().split(/\s+/);
   const action = parts[0];
 
@@ -69,13 +69,13 @@ Edit ~/.pi/agent/settings.json directly for full control:
 }`;
 
   ctx.ui.notify(help, "info");
-}
+};
 
-export async function handlePermissionCommand(
+export const handlePermissionCommand = async (
   state: PermissionState,
   args: string,
   ctx: ExtensionCommandContext,
-): Promise<void> {
+): Promise<void> => {
   const arg = args.trim().toLowerCase();
 
   if (arg === "config" || arg.startsWith("config ")) {
@@ -139,17 +139,17 @@ export async function handlePermissionCommand(
   const saveMsg =
     scope === "Global (persists)" ? " (saved globally)" : " (session only)";
   ctx.ui.notify(`Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`, "info");
-}
+};
 
 // ============================================================================
 // /permission-mode COMMAND
 // ============================================================================
 
-export async function handlePermissionModeCommand(
+export const handlePermissionModeCommand = async (
   state: PermissionState,
   args: string,
   ctx: ExtensionCommandContext,
-): Promise<void> {
+): Promise<void> => {
   const arg = args.trim().toLowerCase();
 
   if (arg && PERMISSION_MODES.includes(arg as PermissionMode)) {
@@ -215,4 +215,4 @@ export async function handlePermissionModeCommand(
     `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}${saveMsg}`,
     "info",
   );
-}
+};

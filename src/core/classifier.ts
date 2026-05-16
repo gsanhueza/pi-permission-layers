@@ -3,7 +3,6 @@
  */
 
 import { parse } from "shell-quote";
-import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./tools";
 import {
   ALL_REDIRECTION_OPS,
   COMMAND_SEPARATORS,
@@ -18,6 +17,7 @@ import {
   isMediumLevel,
   isMinimalLevel,
 } from "./levels/index";
+import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./tools";
 import type { Classification, PermissionLevel } from "./types";
 import { LEVEL_INDEX } from "./types";
 
@@ -34,7 +34,7 @@ interface ParsedCommand {
   writesFiles?: boolean;
 }
 
-function hasDangerousExpansion(command: string): boolean {
+const hasDangerousExpansion = (command: string): boolean => {
   const braceExpansions = command.match(/\$\{[^}]+\}/g) || [];
   for (const expansion of braceExpansions) {
     if (/\$\(|\`/.test(expansion)) {
@@ -42,9 +42,9 @@ function hasDangerousExpansion(command: string): boolean {
     }
   }
   return false;
-}
+};
 
-function detectShellTricks(command: string): boolean {
+const detectShellTricks = (command: string): boolean => {
   if (SHELL_TRICK_PATTERNS.some((pattern) => pattern.test(command))) {
     return true;
   }
@@ -52,9 +52,9 @@ function detectShellTricks(command: string): boolean {
     return true;
   }
   return false;
-}
+};
 
-function parseCommand(command: string): ParsedCommand {
+const parseCommand = (command: string): ParsedCommand => {
   const hasShellTricks = detectShellTricks(command);
 
   let tokens: ReturnType<typeof parse>;
@@ -139,13 +139,13 @@ function parseCommand(command: string): ParsedCommand {
     hasShellTricks: hasShellTricks || foundCommandSubstitution,
     writesFiles,
   };
-}
+};
 
 // ============================================================================
 // DANGEROUS COMMAND DETECTION
 // ============================================================================
 
-function isDangerousCommand(tokens: string[]): boolean {
+const isDangerousCommand = (tokens: string[]): boolean => {
   if (tokens.length === 0) return false;
 
   const cmd = getCommandName(tokens);
@@ -187,13 +187,13 @@ function isDangerousCommand(tokens: string[]): boolean {
   if (tokens.join("").includes(":(){ :|:& };:")) return true;
 
   return false;
-}
+};
 
 // ============================================================================
 // CLASSIFY SEGMENT
 // ============================================================================
 
-function classifySegment(tokens: string[]): Classification {
+const classifySegment = (tokens: string[]): Classification => {
   if (tokens.length === 0) {
     return { level: "minimal", dangerous: false };
   }
@@ -221,13 +221,16 @@ function classifySegment(tokens: string[]): Classification {
   }
 
   return { level: "high", dangerous: false };
-}
+};
 
 // ============================================================================
 // PUBLIC CLASSIFY COMMAND
 // ============================================================================
 
-export function classifyCommand(command: string, config?: any): Classification {
+export const classifyCommand = (
+  command: string,
+  config?: any,
+): Classification => {
   const effectiveConfig = config ?? getCachedConfig();
 
   const normalizedCommand = applyPrefixMappings(
@@ -285,4 +288,4 @@ export function classifyCommand(command: string, config?: any): Classification {
   }
 
   return { level: maxLevel, dangerous };
-}
+};

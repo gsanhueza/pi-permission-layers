@@ -15,7 +15,7 @@ import { LEVELS, PERMISSION_MODES } from "./types";
 // CONFIG VALIDATION
 // ============================================================================
 
-function validateConfig(raw: PermissionConfig): PermissionConfig {
+const validateConfig = (raw: PermissionConfig): PermissionConfig => {
   if (!raw || typeof raw !== "object") return {};
 
   const result: PermissionConfig = {};
@@ -52,25 +52,25 @@ function validateConfig(raw: PermissionConfig): PermissionConfig {
   result.quietStartup = raw.quietStartup ?? false;
 
   return result;
-}
+};
 
 // ============================================================================
 // SETTINGS FILE I/O
 // ============================================================================
 
-function getSettingsPath(): string {
+const getSettingsPath = (): string => {
   return path.join(process.env.HOME || "", ".pi", "agent", "settings.json");
-}
+};
 
-function loadSettings(): Record<string, unknown> {
+const loadSettings = (): Record<string, unknown> => {
   try {
     return JSON.parse(fs.readFileSync(getSettingsPath(), "utf-8"));
   } catch {
     return {};
   }
-}
+};
 
-function saveSettings(settings: Record<string, unknown>): void {
+const saveSettings = (settings: Record<string, unknown>): void => {
   const settingsPath = getSettingsPath();
   const dir = path.dirname(settingsPath);
   const tempPath = `${settingsPath}.tmp`;
@@ -91,57 +91,57 @@ function saveSettings(settings: Record<string, unknown>): void {
     } catch {}
     throw e;
   }
-}
+};
 
 // ============================================================================
 // GLOBAL PERMISSION LEVEL
 // ============================================================================
 
-export function loadGlobalPermission(): PermissionLevel | null {
+export const loadGlobalPermission = (): PermissionLevel | null => {
   const settings = loadSettings();
   const level = (settings.permissionLevel as string)?.toLowerCase();
   if (level && LEVELS.includes(level as PermissionLevel)) {
     return level as PermissionLevel;
   }
   return null;
-}
+};
 
-export function saveGlobalPermission(level: PermissionLevel): void {
+export const saveGlobalPermission = (level: PermissionLevel): void => {
   const settings = loadSettings();
   settings.permissionLevel = level;
   saveSettings(settings);
-}
+};
 
 // ============================================================================
 // GLOBAL PERMISSION MODE
 // ============================================================================
 
-export function loadGlobalPermissionMode(): PermissionMode | null {
+export const loadGlobalPermissionMode = (): PermissionMode | null => {
   const settings = loadSettings();
   const mode = (settings.permissionMode as string)?.toLowerCase();
   if (mode && PERMISSION_MODES.includes(mode as PermissionMode)) {
     return mode as PermissionMode;
   }
   return null;
-}
+};
 
-export function saveGlobalPermissionMode(mode: PermissionMode): void {
+export const saveGlobalPermissionMode = (mode: PermissionMode): void => {
   const settings = loadSettings();
   settings.permissionMode = mode;
   saveSettings(settings);
-}
+};
 
 // ============================================================================
 // PERMISSION CONFIG
 // ============================================================================
 
-export function loadPermissionConfig(): PermissionConfig {
+export const loadPermissionConfig = (): PermissionConfig => {
   const settings = loadSettings();
   return validateConfig(settings.permissionConfig as PermissionConfig);
-}
+};
 
-export function savePermissionConfig(config: PermissionConfig): void {
+export const savePermissionConfig = (config: PermissionConfig): void => {
   const settings = loadSettings();
   settings.permissionConfig = config;
   saveSettings(settings);
-}
+};

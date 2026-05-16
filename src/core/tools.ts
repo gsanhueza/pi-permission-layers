@@ -12,21 +12,21 @@ const CONFIG_CACHE_TTL = 5000; // 5 seconds
 let regexCache: Map<string, RegExp> = new Map();
 const MAX_REGEX_CACHE_SIZE = 500;
 
-export function invalidateConfigCache(): void {
+export const invalidateConfigCache = (): void => {
   configCache = null;
   regexCache.clear();
-}
+};
 
-export function getCachedConfig(): PermissionConfig {
+export const getCachedConfig = (): PermissionConfig => {
   const now = Date.now();
   if (!configCache || now - configCacheTime > CONFIG_CACHE_TTL) {
     configCache = loadPermissionConfig();
     configCacheTime = now;
   }
   return configCache;
-}
+};
 
-function getCachedRegex(pattern: string): RegExp {
+const getCachedRegex = (pattern: string): RegExp => {
   let regex = regexCache.get(pattern);
   if (!regex) {
     if (regexCache.size >= MAX_REGEX_CACHE_SIZE) {
@@ -37,13 +37,13 @@ function getCachedRegex(pattern: string): RegExp {
     regexCache.set(pattern, regex);
   }
   return regex;
-}
+};
 
 // ============================================================================
 // PATTERN MATCHING
 // ============================================================================
 
-export function globToRegex(pattern: string): RegExp {
+export const globToRegex = (pattern: string): RegExp => {
   try {
     if (/\*{5,}/.test(pattern)) {
       return /(?!)/;
@@ -58,12 +58,12 @@ export function globToRegex(pattern: string): RegExp {
   } catch {
     return /(?!)/;
   }
-}
+};
 
-export function matchesAnyPattern(
+export const matchesAnyPattern = (
   command: string,
   patterns: string[] | undefined | null,
-): boolean {
+): boolean => {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) {
     return false;
   }
@@ -71,16 +71,16 @@ export function matchesAnyPattern(
     (pattern) =>
       typeof pattern === "string" && getCachedRegex(pattern).test(command),
   );
-}
+};
 
 // ============================================================================
 // PREFIX MAPPINGS
 // ============================================================================
 
-export function applyPrefixMappings(
+export const applyPrefixMappings = (
   command: string,
   mappings: PermissionConfig["prefixMappings"],
-): string {
+): string => {
   if (!mappings || !Array.isArray(mappings) || mappings.length === 0)
     return command;
 
@@ -112,16 +112,16 @@ export function applyPrefixMappings(
   }
 
   return command;
-}
+};
 
 // ============================================================================
 // OVERRIDE CHECKING
 // ============================================================================
 
-export function checkOverrides(
+export const checkOverrides = (
   command: string,
   overrides: PermissionConfig["overrides"],
-): Classification | null {
+): Classification | null => {
   if (!overrides) return null;
 
   const trimmed = command.trim();
@@ -147,4 +147,4 @@ export function checkOverrides(
   }
 
   return null;
-}
+};

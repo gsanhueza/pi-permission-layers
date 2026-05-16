@@ -53,16 +53,6 @@ export const PERMISSION_MODE_INFO: Record<
   block: { label: "Block", desc: "Block instead of prompting" },
 };
 
-export const LEVEL_ALLOWED_DESC: Record<PermissionLevel, string> = {
-  minimal:
-    "read-only (cat, ls, grep, git status/diff/log, npm list, version checks)",
-  low: "read-only + file write/edit",
-  medium:
-    "dev ops (install packages, build, test, git commit/pull, file operations)",
-  high: "full operations except dangerous commands",
-  bypassed: "all operations",
-};
-
 // ============================================================================
 // CONFIGURATION TYPES
 // ============================================================================

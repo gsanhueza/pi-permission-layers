@@ -12,11 +12,11 @@ import { type PermissionConfig } from "../src/core/types";
 // Helpers
 // ============================================================================
 
-function assertLevel(cmd: string, expected: string, dangerous = false) {
+const assertLevel = (cmd: string, expected: string, dangerous = false) => {
   const result = classifyCommand(cmd);
   expect(result.level).toBe(expected);
   expect(result.dangerous).toBe(dangerous);
-}
+};
 
 // ============================================================================
 // MINIMAL level tests - read-only commands
