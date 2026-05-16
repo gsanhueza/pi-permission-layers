@@ -11,6 +11,7 @@ import {
   SHELL_EXECUTION_COMMANDS,
   SHELL_TRICK_PATTERNS,
 } from "./constants";
+import type { Classification } from "./interfaces";
 import {
   getCommandName,
   isHighLevel,
@@ -18,7 +19,7 @@ import {
   isMinimalLevel,
 } from "./levels/index";
 import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./tools";
-import type { Classification, PermissionLevel } from "./types";
+import type { PermissionLevel } from "./types";
 import { LEVEL_INDEX } from "./types";
 
 // ============================================================================

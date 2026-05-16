@@ -4,11 +4,8 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type {
-  PermissionConfig,
-  PermissionLevel,
-  PermissionMode,
-} from "./types";
+import type { PermissionConfig } from "./interfaces";
+import type { PermissionLevel, PermissionMode } from "./types";
 import { LEVELS, PERMISSION_MODES } from "./types";
 
 // ============================================================================

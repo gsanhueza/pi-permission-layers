@@ -9,7 +9,7 @@
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { describe, expect, test } from "vitest";
-import type { PermissionState } from "../src/core/types";
+import type { PermissionState } from "../src/core/interfaces";
 import {
   handleBashToolCall,
   handleMcpToolCall,

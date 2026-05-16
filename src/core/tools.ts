@@ -1,5 +1,5 @@
+import { Classification, PermissionConfig } from "./interfaces";
 import { loadPermissionConfig } from "./settings";
-import type { Classification, PermissionConfig } from "./types";
 
 // ============================================================================
 // CONFIGURATION CACHING

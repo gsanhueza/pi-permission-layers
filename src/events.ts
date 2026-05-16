@@ -17,21 +17,21 @@ import {
 } from "./handlers";
 import { getStatusText, isQuietMode } from "./ui";
 
-// Re-export types and constants needed by the hook
-export {
-  LEVELS,
-  LEVEL_INFO,
-  PERMISSION_MODES,
-  PERMISSION_MODE_INFO,
-  type PermissionLevel,
-  type PermissionMode,
-};
+// // Re-export types and constants needed by the hook
+// export {
+//   LEVELS,
+//   LEVEL_INFO,
+//   PERMISSION_MODES,
+//   PERMISSION_MODE_INFO,
+//   type PermissionLevel,
+//   type PermissionMode,
+// };
 
 import {
   ExtensionContext,
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
-import { PermissionState } from "./core/types";
+import { PermissionState } from "./core/interfaces";
 
 // ============================================================================
 // SESSION START

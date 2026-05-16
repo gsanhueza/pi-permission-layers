@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from "vitest";
 import { classifyCommand } from "../src/core/classifier";
-import { type PermissionConfig } from "../src/core/types";
+import { type PermissionConfig } from "../src/core/interfaces";
 
 // ============================================================================
 // Helpers
