@@ -3,12 +3,12 @@
  */
 
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import type { PermissionState } from "./core/interfaces";
+import type { PermissionState } from "../core/interfaces";
 import {
   saveGlobalPermission,
   saveGlobalPermissionMode,
-} from "./core/settings";
-import type { PermissionLevel, PermissionMode } from "./core/types";
+} from "../core/settings";
+import type { PermissionLevel, PermissionMode } from "../core/types";
 import { getStatusText } from "./ui";
 
 export const createInitialState = (): PermissionState => {

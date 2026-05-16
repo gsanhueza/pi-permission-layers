@@ -14,8 +14,8 @@ import {
   handleBashToolCall,
   handleMcpToolCall,
   handleWriteToolCall,
-} from "../src/handlers";
-import { createInitialState } from "../src/state";
+} from "../src/ui/handlers";
+import { createInitialState } from "../src/ui/state";
 
 // ============================================================================
 // Mock context factory

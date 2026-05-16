@@ -1,37 +1,22 @@
 import {
   loadGlobalPermission,
   loadGlobalPermissionMode,
-} from "./core/settings";
-import type { PermissionLevel, PermissionMode } from "./core/types";
-import {
-  LEVELS,
-  LEVEL_INFO,
-  PERMISSION_MODES,
-  PERMISSION_MODE_INFO,
-} from "./core/types";
+} from "../core/settings";
+import type { PermissionLevel } from "../core/types";
+import { LEVELS } from "../core/types";
 import {
   handleBashToolCall,
   handleMcpToolCall,
   handleWriteToolCall,
   isKnownReadTool,
-} from "./handlers";
+} from "../ui/handlers";
 import { getStatusText, isQuietMode } from "./ui";
-
-// // Re-export types and constants needed by the hook
-// export {
-//   LEVELS,
-//   LEVEL_INFO,
-//   PERMISSION_MODES,
-//   PERMISSION_MODE_INFO,
-//   type PermissionLevel,
-//   type PermissionMode,
-// };
 
 import {
   ExtensionContext,
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
-import { PermissionState } from "./core/interfaces";
+import { PermissionState } from "../core/interfaces";
 
 // ============================================================================
 // SESSION START

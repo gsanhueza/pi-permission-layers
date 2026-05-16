@@ -3,14 +3,14 @@
  */
 
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { classifyCommand } from "./core/classifier";
+import { classifyCommand } from "../core/classifier";
 import type {
   PermissionRequestOptions,
   PermissionState,
   WriteToolCallOptions,
-} from "./core/interfaces";
-import type { PermissionLevel } from "./core/types";
-import { LEVEL_INDEX, LEVEL_INFO } from "./core/types";
+} from "../core/interfaces";
+import type { PermissionLevel } from "../core/types";
+import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import { setLevel } from "./state";
 import { hasInteractiveUI, notifySystem, truncate } from "./ui";
 

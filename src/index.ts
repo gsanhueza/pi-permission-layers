@@ -42,9 +42,9 @@ import {
 import {
   handlePermissionCommand,
   handlePermissionModeCommand,
-} from "./commands";
-import { handleSessionStart, handleToolCall } from "./events";
-import { createInitialState } from "./state";
+} from "./ui/commands";
+import { handleSessionStart, handleToolCall } from "./ui/events";
+import { createInitialState } from "./ui/state";
 
 export default (pi: ExtensionAPI) => {
   const state = createInitialState();

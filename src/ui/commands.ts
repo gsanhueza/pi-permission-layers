@@ -3,16 +3,16 @@
  */
 
 import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import type { PermissionState } from "./core/interfaces";
-import { loadPermissionConfig, savePermissionConfig } from "./core/settings";
-import { invalidateConfigCache } from "./core/tools";
-import type { PermissionLevel, PermissionMode } from "./core/types";
+import type { PermissionState } from "../core/interfaces";
+import { loadPermissionConfig, savePermissionConfig } from "../core/settings";
+import { invalidateConfigCache } from "../core/tools";
+import type { PermissionLevel, PermissionMode } from "../core/types";
 import {
   LEVELS,
   LEVEL_INFO,
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
-} from "./core/types";
+} from "../core/types";
 import { setLevel, setMode } from "./state";
 import { hasInteractiveUI } from "./ui";
 
