@@ -77,10 +77,13 @@ export const requestPermission = async (
   if (currentIndex >= requiredIndex) return undefined;
 
   const requiredInfo = LEVEL_INFO[requiredLevel];
+  const currentInfo = LEVEL_INFO[state.currentLevel];
 
+  // Send system notification
+  const systemTitle = `${notifyTitle} (${requiredInfo.label})`;
   await notifySystem(
-    notifyTitle,
-    `${details} requires ${requiredInfo.label} level (current: ${LEVEL_INFO[state.currentLevel].label})`,
+    systemTitle,
+    `${details} \nCurrent level: ${currentInfo.label}`,
   );
 
   if (state.permissionMode === "block") {

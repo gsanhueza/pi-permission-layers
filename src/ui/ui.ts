@@ -176,7 +176,7 @@ export const notifySystem = async (
 
       execFile("terminal-notifier", tnArgs, () => {});
     } else if (process.platform === "linux") {
-      execFile("notify-send", ["-u", "critical", title, message], () => {});
+      execFile("notify-send", ["-a", "pi-permission-layers", title, message]);
     }
   } catch {
     // Silently fail if notifications unavailable
