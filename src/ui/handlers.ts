@@ -7,7 +7,7 @@ import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
-import { parseMcpInput, truncate } from "../shared/tools";
+import { parseMcpInput } from "../shared/tools";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
 
@@ -39,7 +39,7 @@ Use /permission-mode ask to enable confirmations.`,
     };
   }
 
-  const choice = await ctx.ui.select(`⚠️ Dangerous: $ ${truncate(command)}`, [
+  const choice = await ctx.ui.select(`⚠️ Dangerous: $ ${command}`, [
     "Allow once",
     "Cancel",
   ]);
@@ -130,13 +130,11 @@ export const handleBashToolCall = async (
     return handleDangerousCommand(command, state, ctx);
   }
 
-  const displayCmd = truncate(command);
-
   return requestPermission({
     state,
-    message: displayCmd,
+    message: `$ ${command}`,
     requiredLevel: classification.level,
-    details: `Command: ${displayCmd}`,
+    details: `Command: ${command}`,
     notifyTitle: "Permission Required",
     ctx,
   });

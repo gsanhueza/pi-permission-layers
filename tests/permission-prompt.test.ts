@@ -90,12 +90,12 @@ describe("bash prompt: command shown with $ prefix in message", () => {
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
-    expect(message).toMatch(/^\[Requires \w+\]: git push origin main/);
+    expect(message).toMatch(/^\[Requires \w+\]: \$ git push origin main/);
   });
 });
 
-describe("bash prompt: short command is not truncated", () => {
-  test("short command not truncated", async () => {
+describe("bash prompt: full command shown in message", () => {
+  test("full command shown", async () => {
     const state = minimalState();
     const ctx = makeCtx("Cancel");
 
@@ -108,12 +108,11 @@ describe("bash prompt: short command is not truncated", () => {
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
     expect(message).toContain("npm install");
-    expect(message).not.toContain("…");
   });
 });
 
-describe("bash prompt: long command is truncated with ellipsis", () => {
-  test("long command truncated", async () => {
+describe("bash prompt: long command shown in full", () => {
+  test("long command not truncated", async () => {
     const state = minimalState();
     const ctx = makeCtx("Cancel");
 
@@ -126,9 +125,8 @@ describe("bash prompt: long command is truncated with ellipsis", () => {
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
-    expect(message).toContain("…");
-    const displayedCmd = message.split("  [")[0];
-    expect(displayedCmd.length).toBeLessThanOrEqual(100);
+    expect(message).toContain(longCmd);
+    expect(message).not.toContain("…");
   });
 });
 
@@ -398,8 +396,8 @@ describe("dangerous: Cancel blocks command", () => {
   });
 });
 
-describe("dangerous: long dangerous command is truncated in title", () => {
-  test("long dangerous command truncated", async () => {
+describe("dangerous: long dangerous command shown in full", () => {
+  test("long dangerous command not truncated", async () => {
     const state = minimalState();
     const ctx = makeCtx("Cancel");
 
@@ -411,7 +409,8 @@ describe("dangerous: long dangerous command is truncated in title", () => {
     );
 
     const { message } = ctx.selectCalls[0];
-    expect(message).toContain("…");
+    expect(message).toContain(longDangerousCmd);
+    expect(message).not.toContain("…");
   });
 });
 

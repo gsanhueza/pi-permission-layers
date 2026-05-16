@@ -6,7 +6,7 @@ import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
-import { parseMcpInput, truncate } from "../shared/tools";
+import { parseMcpInput } from "../shared/tools";
 
 // ============================================================================
 // DANGEROUS COMMAND HANDLER
@@ -69,11 +69,9 @@ export const handleBashToolCall = (
     return handleDangerousCommand(command);
   }
 
-  const displayCmd = truncate(command);
-
   return requestPermission({
     state,
-    message: `$ ${displayCmd}`,
+    message: `$ ${command}`,
     requiredLevel: classification.level,
     envVarHint: `pi -p "..."`,
   });

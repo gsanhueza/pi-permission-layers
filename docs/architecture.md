@@ -9,7 +9,7 @@ src/
 ├── shared/                 # Shared logic (single source of truth)
 │   ├── commands.ts         # handleConfigSubcommand (shared by UI & no-UI)
 │   ├── events.ts           # initializeSessionState
-│   ├── tools.ts            # MCP constants, parseMcpInput, isKnownReadTool, truncate
+│   ├── tools.ts            # MCP constants, parseMcpInput, isKnownReadTool
 │   └── ui.ts               # hasInteractiveUI, notifySystem, isQuietMode, getStatusText
 │
 ├── no-ui/                  # Non-interactive handlers (print mode, CI)
@@ -49,7 +49,7 @@ Functions used by both interactive and non-interactive handlers:
 
 - `commands.ts` — `handleConfigSubcommand()` (config show/reset/help)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
-- `tools.ts` — MCP tool detection (`parseMcpInput()`), read-only tool check (`isKnownReadTool()`), `truncate()`
+- `tools.ts` — MCP tool detection (`parseMcpInput()`), read-only tool check (`isKnownReadTool()`)
 - `ui.ts` — `hasInteractiveUI()`, `notifySystem()`, `isQuietMode()`, `getStatusText()`
 
 ### `ui/` — Interactive Handlers

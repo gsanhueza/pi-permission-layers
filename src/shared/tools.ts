@@ -15,15 +15,6 @@ export const isKnownReadTool = (toolName: string): boolean => {
 };
 
 // ============================================================================
-// UTILITY
-// ============================================================================
-
-export const truncate = (s: string, maxLen = 80): string => {
-  const trimmed = s.trim();
-  return trimmed.length > maxLen ? trimmed.slice(0, maxLen - 1) + "…" : trimmed;
-};
-
-// ============================================================================
 // MCP TOOL DETECTION
 // ============================================================================
 
