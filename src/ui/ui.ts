@@ -1,7 +1,3 @@
-/**
- * UI helpers - status text, mode detection, terminal focus, system notifications
- */
-
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { execFile } from "node:child_process";
 import { getCachedConfig } from "../core/tools";

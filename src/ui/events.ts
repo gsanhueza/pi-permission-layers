@@ -1,16 +1,12 @@
-import {
-  loadGlobalPermission,
-  loadGlobalPermissionMode,
-} from "../core/settings";
-import type { PermissionLevel } from "../core/types";
-import { LEVELS } from "../core/types";
+import { handleToolCall as handleToolCall_noUI } from "../no-ui/events";
+import { initializeSessionState } from "../shared/events";
+import { isKnownReadTool } from "../shared/tools";
 import {
   handleBashToolCall,
   handleMcpToolCall,
   handleWriteToolCall,
-  isKnownReadTool,
 } from "../ui/handlers";
-import { getStatusText, isQuietMode } from "./ui";
+import { getStatusText, hasInteractiveUI, isQuietMode } from "./ui";
 
 import {
   ExtensionContext,
@@ -26,41 +22,24 @@ export const handleSessionStart = (
   state: PermissionState,
   ctx: ExtensionContext,
 ): void => {
-  const envLevel = process.env.PI_PERMISSION_LEVEL?.toLowerCase();
-  if (envLevel && LEVELS.includes(envLevel as PermissionLevel)) {
-    state.currentLevel = envLevel as PermissionLevel;
-  } else {
-    const globalLevel = loadGlobalPermission();
-    if (globalLevel) {
-      state.currentLevel = globalLevel;
-    }
-  }
+  initializeSessionState(state);
 
-  if (ctx.hasUI) {
-    const globalMode = loadGlobalPermissionMode();
-    if (globalMode) {
-      state.permissionMode = globalMode;
-    }
+  if (ctx.ui?.setStatus) {
+    ctx.ui.setStatus("authority", getStatusText(state.currentLevel));
   }
-
-  if (ctx.hasUI) {
-    if (ctx.ui?.setStatus) {
-      ctx.ui.setStatus("authority", getStatusText(state.currentLevel));
-    }
-    if (state.currentLevel === "bypassed") {
-      ctx.ui.notify("⚠️ Permission bypassed - all checks disabled!", "warning");
-    } else if (!isQuietMode(ctx)) {
-      ctx.ui.notify(
-        `Permission: ${getStatusText(state.currentLevel)} (use /permission to change)`,
-        "info",
-      );
-    }
-    if (state.permissionMode === "block") {
-      ctx.ui.notify(
-        "Permission mode: Block (use /permission-mode to change)",
-        "info",
-      );
-    }
+  if (state.currentLevel === "bypassed") {
+    ctx.ui.notify("⚠️ Permission bypassed - all checks disabled!", "warning");
+  } else if (!isQuietMode(ctx)) {
+    ctx.ui.notify(
+      `Permission: ${getStatusText(state.currentLevel)} (use /permission to change)`,
+      "info",
+    );
+  }
+  if (state.permissionMode === "block") {
+    ctx.ui.notify(
+      "Permission mode: Block (use /permission-mode to change)",
+      "info",
+    );
   }
 };
 
@@ -69,6 +48,17 @@ export const handleSessionStart = (
 // ============================================================================
 
 export const handleToolCall = async (
+  event: ToolCallEvent,
+  ctx: ExtensionContext,
+  state: PermissionState,
+): Promise<any> => {
+  if (hasInteractiveUI(ctx)) {
+    return handleToolCall_UI(event, ctx, state);
+  }
+  return handleToolCall_noUI(event, state);
+};
+
+const handleToolCall_UI = async (
   event: ToolCallEvent,
   ctx: ExtensionContext,
   state: PermissionState,

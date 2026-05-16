@@ -40,31 +40,49 @@ import {
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
 import {
-  handlePermissionCommand,
-  handlePermissionModeCommand,
+  handlePermissionCommand as handlePermissionCommand_noUI,
+  handlePermissionModeCommand as handlePermissionModeCommand_noUI,
+} from "./no-ui/commands";
+import { handleSessionStart as handleSessionStart_noUI } from "./no-ui/events";
+import {
+  handlePermissionCommand as handlePermissionCommand_UI,
+  handlePermissionModeCommand as handlePermissionModeCommand_UI,
 } from "./ui/commands";
 import { handleSessionStart, handleToolCall } from "./ui/events";
 import { createInitialState } from "./ui/state";
+import { hasInteractiveUI } from "./ui/ui";
 
 export default (pi: ExtensionAPI) => {
   const state = createInitialState();
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
-    handler: (args: string, ctx: ExtensionCommandContext) =>
-      handlePermissionCommand(state, args, ctx),
+    handler: (args: string, ctx: ExtensionCommandContext) => {
+      if (hasInteractiveUI(ctx)) {
+        return handlePermissionCommand_UI(state, args, ctx);
+      }
+      return handlePermissionCommand_noUI(state, args, ctx);
+    },
   });
 
   pi.registerCommand("permission-mode", {
     description: "Set permission prompt mode (ask or block)",
-    handler: (args: string, ctx: ExtensionCommandContext) =>
-      handlePermissionModeCommand(state, args, ctx),
+    handler: (args: string, ctx: ExtensionCommandContext) => {
+      if (hasInteractiveUI(ctx)) {
+        return handlePermissionModeCommand_UI(state, args, ctx);
+      }
+      return handlePermissionModeCommand_noUI(state, args, ctx);
+    },
   });
 
   pi.on(
     "session_start",
     async (_event: SessionStartEvent, ctx: ExtensionContext) => {
-      handleSessionStart(state, ctx);
+      if (hasInteractiveUI(ctx)) {
+        handleSessionStart(state, ctx);
+      } else {
+        handleSessionStart_noUI(state);
+      }
     },
   );
 
