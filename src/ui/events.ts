@@ -46,11 +46,13 @@ export const handleSessionStart = (
 // TOOL CALL DISPATCHER
 // ============================================================================
 
+type ToolCallResult = { block: true; reason: string } | undefined;
+
 export const handleToolCall = async (
   event: ToolCallEvent,
   ctx: ExtensionContext,
   state: PermissionState,
-): Promise<any> => {
+): Promise<ToolCallResult> => {
   if (event.toolName === "bash") {
     return handleBashToolCall(state, event.input.command as string, ctx);
   }

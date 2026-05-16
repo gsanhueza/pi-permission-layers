@@ -36,11 +36,13 @@ const validateConfig = (raw: PermissionConfig): PermissionConfig => {
     const valid = raw.prefixMappings
       .filter(
         (m): m is { from: string; to: string } =>
-          m &&
           typeof m === "object" &&
-          typeof (m as any).from === "string" &&
-          (m as any).from.length > 0 &&
-          typeof (m as any).to === "string",
+          m !== null &&
+          "from" in m &&
+          typeof m.from === "string" &&
+          m.from.length > 0 &&
+          "to" in m &&
+          typeof m.to === "string",
       )
       .slice(0, 50);
     if (valid.length > 0) result.prefixMappings = valid;

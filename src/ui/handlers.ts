@@ -7,6 +7,7 @@ import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
+import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
@@ -146,7 +147,7 @@ export const handleBashToolCall = async (
 
 export const handleMcpToolCall = async (
   state: PermissionState,
-  input: Record<string, any>,
+  input: McpToolInput,
   ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> => {
   const { targetTool, requiredLevel } = parseMcpInput(input);

@@ -24,10 +24,12 @@ export const handleSessionStart = (state: PermissionState): void => {
 // TOOL CALL HANDLER
 // ============================================================================
 
+type ToolCallResult = { block: true; reason: string } | undefined;
+
 export const handleToolCall = async (
   event: ToolCallEvent,
   state: PermissionState,
-): Promise<any> => {
+): Promise<ToolCallResult> => {
   if (event.toolName === "bash") {
     return handleBashToolCall(state, event.input.command as string);
   }

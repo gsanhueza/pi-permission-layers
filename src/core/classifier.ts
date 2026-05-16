@@ -11,7 +11,7 @@ import {
   SHELL_EXECUTION_COMMANDS,
   SHELL_TRICK_PATTERNS,
 } from "./constants";
-import type { Classification } from "./interfaces";
+import type { Classification, PermissionConfig } from "./interfaces";
 import {
   getCommandName,
   isHighLevel,
@@ -230,7 +230,7 @@ const classifySegment = (tokens: string[]): Classification => {
 
 export const classifyCommand = (
   command: string,
-  config?: any,
+  config?: PermissionConfig,
 ): Classification => {
   const effectiveConfig = config ?? getCachedConfig();
 

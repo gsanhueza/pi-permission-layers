@@ -81,7 +81,17 @@ export interface McpToolInfo {
   requiredLevel: PermissionLevel;
 }
 
-export const parseMcpInput = (input: Record<string, any>): McpToolInfo => {
+export interface McpToolInput {
+  tool?: string;
+  connect?: string;
+  describe?: string;
+  search?: string;
+  server?: string;
+  action?: string;
+  [key: string]: unknown;
+}
+
+export const parseMcpInput = (input: McpToolInput): McpToolInfo => {
   let targetTool: string;
   let mode: string;
 
