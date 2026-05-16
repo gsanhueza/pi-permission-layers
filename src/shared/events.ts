@@ -4,7 +4,7 @@
 
 import type { PermissionState } from "../core/interfaces";
 import {
-  loadGlobalPermission,
+  loadGlobalPermissionLevel,
   loadGlobalPermissionMode,
 } from "../core/settings";
 import type { PermissionLevel } from "../core/types";
@@ -19,7 +19,7 @@ export const initializeSessionState = (state: PermissionState): void => {
   if (envLevel && LEVELS.includes(envLevel as PermissionLevel)) {
     state.currentLevel = envLevel as PermissionLevel;
   } else {
-    const globalLevel = loadGlobalPermission();
+    const globalLevel = loadGlobalPermissionLevel();
     if (globalLevel) {
       state.currentLevel = globalLevel;
     }

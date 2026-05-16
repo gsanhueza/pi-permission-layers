@@ -5,7 +5,7 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { PermissionState } from "../core/interfaces";
 import {
-  saveGlobalPermission,
+  saveGlobalPermissionLevel,
   saveGlobalPermissionMode,
 } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
@@ -29,7 +29,7 @@ export const setLevel = (
   state.currentLevel = level;
   state.isSessionOnly = !saveGlobally;
   if (saveGlobally) {
-    saveGlobalPermission(level);
+    saveGlobalPermissionLevel(level);
   }
   if (ctx.ui?.setStatus) {
     ctx.ui.setStatus("authority", getStatusText(level));

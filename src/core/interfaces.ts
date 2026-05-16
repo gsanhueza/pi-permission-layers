@@ -7,22 +7,26 @@ import { PermissionLevel, PermissionMode } from "./types";
 
 export interface PermissionConfig {
   /** Override patterns to force specific permission levels */
-  overrides?: {
-    minimal?: string[];
-    low?: string[];
-    medium?: string[];
-    high?: string[];
-    dangerous?: string[];
-  };
+  overrides?: PermissionOverrides;
   /** Prefix mappings to normalize commands before classification */
-  prefixMappings?: Array<{
-    from: string;
-    to: string;
-  }>;
+  prefixMappings?: PermissionPrefixMapping[];
   /** Hide startup usage help */
   quietStartup?: boolean;
   /** Force interactive UI mode regardless of context */
   forceUI?: boolean;
+}
+
+export interface PermissionOverrides {
+  minimal?: string[];
+  low?: string[];
+  medium?: string[];
+  high?: string[];
+  dangerous?: string[];
+}
+
+export interface PermissionPrefixMapping {
+  from: string;
+  to: string;
 }
 
 // ============================================================================
