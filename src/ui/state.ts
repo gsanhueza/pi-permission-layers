@@ -40,7 +40,6 @@ export const setMode = (
   state: PermissionState,
   mode: PermissionMode,
   saveGlobally: boolean,
-  ctx: ExtensionContext,
 ): void => {
   state.permissionMode = mode;
   state.isModeSessionOnly = !saveGlobally;

@@ -21,7 +21,6 @@ import { hasInteractiveUI } from "./ui";
 // ============================================================================
 
 const handleConfigSubcommand = async (
-  state: PermissionState,
   args: string,
   ctx: ExtensionCommandContext,
 ): Promise<void> => {
@@ -77,7 +76,7 @@ export const handlePermissionCommand = async (
 
   if (arg === "config" || arg.startsWith("config ")) {
     const configArgs = arg.replace(/^config\s*/, "");
-    await handleConfigSubcommand(state, configArgs, ctx);
+    await handleConfigSubcommand(configArgs, ctx);
     return;
   }
 
@@ -159,7 +158,7 @@ export const handlePermissionModeCommand = async (
       ]);
       if (!scope) return;
 
-      setMode(state, newMode, scope === "Global (persists)", ctx);
+      setMode(state, newMode, scope === "Global (persists)");
       const saveMsg =
         scope === "Global (persists)" ? " (saved globally)" : " (session only)";
       ctx.ui.notify(
@@ -167,7 +166,7 @@ export const handlePermissionModeCommand = async (
         "info",
       );
     } else {
-      setMode(state, newMode, false, ctx);
+      setMode(state, newMode, false);
       ctx.ui.notify(
         `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}`,
         "info",
@@ -205,7 +204,7 @@ export const handlePermissionModeCommand = async (
   ]);
   if (!scope) return;
 
-  setMode(state, newMode, scope === "Global (persists)", ctx);
+  setMode(state, newMode, scope === "Global (persists)");
   const saveMsg =
     scope === "Global (persists)" ? " (saved globally)" : " (session only)";
   ctx.ui.notify(
