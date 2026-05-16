@@ -40,6 +40,10 @@ import {
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
 import {
+  getPermissionCompletions,
+  getPermissionModeCompletions,
+} from "./autocomplete";
+import {
   handlePermissionCommand as handlePermissionCommand_noUI,
   handlePermissionModeCommand as handlePermissionModeCommand_noUI,
 } from "./no-ui/commands";
@@ -64,6 +68,7 @@ export default (pi: ExtensionAPI) => {
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
+    getArgumentCompletions: getPermissionCompletions,
     handler: (args: string, ctx: ExtensionCommandContext) =>
       dispatch(
         ctx,
@@ -74,6 +79,7 @@ export default (pi: ExtensionAPI) => {
 
   pi.registerCommand("permission-mode", {
     description: "Set permission prompt mode (ask or block)",
+    getArgumentCompletions: getPermissionModeCompletions,
     handler: (args: string, ctx: ExtensionCommandContext) =>
       dispatch(
         ctx,
