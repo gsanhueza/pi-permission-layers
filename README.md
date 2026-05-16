@@ -120,12 +120,20 @@ Global settings are stored in `~/.pi/agent/settings.json`:
       { "from": "rbenv exec", "to": "" },
       { "from": "pyenv exec", "to": "" }
     ],
-    "quietStartup": true
+    "quietStartup": true,
+    "forceUI": true
   }
 }
 ```
 
 `permissionMode` accepts `ask` (prompt) or `block` (deny without prompting).
+
+### `permissionConfig` Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `quietStartup` | `boolean` | `false` | Suppress the startup notification message |
+| `forceUI` | `boolean` | `false` | Force interactive UI mode regardless of context (e.g., in print mode) |
 
 ### Override Patterns
 

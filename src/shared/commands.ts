@@ -46,7 +46,9 @@ Edit ~/.pi/agent/settings.json directly for full control:
     "prefixMappings": [
       { "from": "fvm flutter", "to": "flutter" },
       { "from": "nvm exec", "to": "" }
-    ]
+    ],
+    "quietStartup": true,
+    "forceUI": true
   }
 }`;
 

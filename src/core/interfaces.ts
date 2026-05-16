@@ -19,7 +19,10 @@ export interface PermissionConfig {
     from: string;
     to: string;
   }>;
+  /** Hide startup usage help */
   quietStartup?: boolean;
+  /** Force interactive UI mode regardless of context */
+  forceUI?: boolean;
 }
 
 // ============================================================================

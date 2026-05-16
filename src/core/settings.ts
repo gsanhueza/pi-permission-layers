@@ -47,6 +47,7 @@ const validateConfig = (raw: PermissionConfig): PermissionConfig => {
   }
 
   result.quietStartup = raw.quietStartup ?? false;
+  result.forceUI = raw.forceUI ?? false;
 
   return result;
 };

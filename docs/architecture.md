@@ -193,7 +193,7 @@ Type definitions and constants:
 - `LEVEL_INFO` — Label and short description per level
 - `PERMISSION_MODE_INFO` — Label and description per mode
 - `LEVEL_ALLOWED_DESC` — Human-readable "allowed at this level" descriptions
-- `PermissionConfig` — Overrides, prefix mappings, quietStartup
+- `PermissionConfig` — Overrides, prefix mappings, quietStartup, forceUI
 - `Classification` — `{ level, dangerous }`
 - `PermissionState` — Current level, mode, session-only flags
 
