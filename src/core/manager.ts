@@ -43,12 +43,18 @@ export class SettingsManager {
   validate(raw: PermissionConfig): PermissionConfig {
     if (!raw || typeof raw !== "object") return {};
 
-    const response: PermissionConfig = {
-      overrides: this.validateOverrides(raw),
-      prefixMappings: this.validatePrefixMappings(raw),
-      quietStartup: this.validateQuietStartup(raw),
-      forceUI: this.validateForceUI(raw),
-    };
+    const overrides = this.validateOverrides(raw);
+    const prefixMappings = this.validatePrefixMappings(raw);
+    const quietStartup = this.validateQuietStartup(raw);
+    const forceUI = this.validateForceUI(raw);
+
+    // Only return what we know is not default
+    const response: PermissionConfig = {};
+
+    if (Object.keys(overrides).length > 0) response.overrides = overrides;
+    if (prefixMappings.length > 0) response.prefixMappings = prefixMappings;
+    if (quietStartup !== undefined) response.quietStartup = quietStartup;
+    if (forceUI !== undefined) response.forceUI = forceUI;
 
     return response;
   }
@@ -104,11 +110,11 @@ export class SettingsManager {
     return response;
   }
 
-  private validateQuietStartup(raw: PermissionConfig): boolean {
-    return raw.quietStartup ?? false;
+  private validateQuietStartup(raw: PermissionConfig): boolean | undefined {
+    return raw.quietStartup;
   }
 
-  private validateForceUI(raw: PermissionConfig): boolean {
-    return raw.forceUI ?? false;
+  private validateForceUI(raw: PermissionConfig): boolean | undefined {
+    return raw.forceUI;
   }
 }

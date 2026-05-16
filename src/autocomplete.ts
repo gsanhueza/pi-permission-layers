@@ -47,8 +47,13 @@ export const getPermissionCompletions = (
     })),
     {
       value: "config",
-      label: "config",
+      label: "Configurations",
       description: "Show or reset configuration",
+    },
+    {
+      value: "settings",
+      label: "UI settings",
+      description: "Setup quietStartup/forceUI",
     },
   ];
   const filtered = items.filter((i) => i.value.startsWith(levelPrefix));

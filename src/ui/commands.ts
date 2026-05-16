@@ -12,6 +12,7 @@ import {
   PERMISSION_MODE_INFO,
 } from "../core/types";
 import { handleConfigSubcommand } from "../shared/commands";
+import { createSettingsList } from "./settings";
 import { setLevel, setMode } from "./state";
 
 // ============================================================================
@@ -28,6 +29,13 @@ export const handlePermissionCommand = async (
   if (arg === "config" || arg.startsWith("config ")) {
     const configArgs = arg.replace(/^config\s*/, "");
     await handleConfigSubcommand(configArgs, ctx);
+    return;
+  }
+
+  if (arg === "settings") {
+    await ctx.ui.custom<void>((_tui, _theme, _keybindings, done) =>
+      createSettingsList(() => done()),
+    );
     return;
   }
 
