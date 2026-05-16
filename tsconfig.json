@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
     "types": ["node"],
     "strict": true,
     "esModuleInterop": true,
