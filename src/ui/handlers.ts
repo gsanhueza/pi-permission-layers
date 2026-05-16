@@ -91,7 +91,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     };
   }
 
-  const promptTitle = `${message}  [requires ${requiredInfo.label}]`;
+  const promptTitle = `[Requires ${requiredInfo.label}]: ${message}`;
   const allowAllLabel = `Allow all ${requiredInfo.label} (session)`;
   const choice = await ctx.ui.select(promptTitle, [
     "Allow once",
@@ -134,7 +134,7 @@ export const handleBashToolCall = async (
 
   return requestPermission({
     state,
-    message: `$ ${displayCmd}`,
+    message: displayCmd,
     requiredLevel: classification.level,
     details: `Command: ${displayCmd}`,
     notifyTitle: "Permission Required",

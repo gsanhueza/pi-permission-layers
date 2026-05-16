@@ -9,16 +9,12 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { describe, expect, test } from "vitest";
 import type { PermissionState } from "../src/core/interfaces";
+import { handleBashToolCall as handleBashToolCall_noUI } from "../src/no-ui/handlers";
 import {
   handleBashToolCall as handleBashToolCall_UI,
   handleMcpToolCall as handleMcpToolCall_UI,
   handleWriteToolCall as handleWriteToolCall_UI,
 } from "../src/ui/handlers";
-import {
-  handleBashToolCall as handleBashToolCall_noUI,
-  handleMcpToolCall as handleMcpToolCall_noUI,
-  handleWriteToolCall as handleWriteToolCall_noUI,
-} from "../src/no-ui/handlers";
 import { createInitialState } from "../src/ui/state";
 
 // ============================================================================
@@ -94,7 +90,7 @@ describe("bash prompt: command shown with $ prefix in message", () => {
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
-    expect(message).toMatch(/^\$ git push origin main/);
+    expect(message).toMatch(/^\[Requires \w+\]: git push origin main/);
   });
 });
 
@@ -132,7 +128,7 @@ describe("bash prompt: long command is truncated with ellipsis", () => {
     const { message } = ctx.selectCalls[0];
     expect(message).toContain("…");
     const displayedCmd = message.split("  [")[0];
-    expect(displayedCmd.length).toBeLessThanOrEqual(83);
+    expect(displayedCmd.length).toBeLessThanOrEqual(100);
   });
 });
 
@@ -149,7 +145,7 @@ describe("bash prompt: required level shown in message", () => {
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
-    expect(message).toContain("[requires High]");
+    expect(message).toContain("[Requires High]");
   });
 
   test("medium level shown", async () => {
@@ -164,7 +160,7 @@ describe("bash prompt: required level shown in message", () => {
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
-    expect(message).toContain("[requires Medium]");
+    expect(message).toContain("[Requires Medium]");
   });
 });
 
