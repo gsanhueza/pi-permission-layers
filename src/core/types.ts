@@ -42,3 +42,5 @@ export const PERMISSION_MODE_INFO: Record<
   ask: { label: "Ask", desc: "Prompt when permission is required" },
   block: { label: "Block", desc: "Block instead of prompting" },
 };
+
+export type Notification = "off" | "on" | "unfocused" | "persistent";

@@ -1,0 +1,8 @@
+{
+  "permissionLevel": "minimal",
+  "permissionConfig": {
+    "quietStartup": false,
+    "forceUI": false,
+    "systemNotifications": "off"
+  }
+}

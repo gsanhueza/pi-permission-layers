@@ -1,5 +1,5 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { PermissionLevel, PermissionMode } from "./types";
+import { Notification, PermissionLevel, PermissionMode } from "./types";
 
 // ============================================================================
 // PERMISSION CONFIGURATION
@@ -14,6 +14,8 @@ export interface PermissionConfig {
   quietStartup?: boolean;
   /** Force interactive UI mode regardless of context */
   forceUI?: boolean;
+  /** System notifications */
+  systemNotifications?: Notification;
 }
 
 export interface PermissionOverrides {

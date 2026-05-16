@@ -165,8 +165,11 @@ export const notifySystem = async (
   title: string,
   message: string,
 ): Promise<void> => {
+  const config = getCachedConfig();
   const focused = await isTerminalFocused();
-  if (focused) return;
+
+  if (config.systemNotifications === "off") return;
+  if (config.systemNotifications === "unfocused" && focused) return;
 
   try {
     if (process.platform === "darwin") {
@@ -176,7 +179,12 @@ export const notifySystem = async (
 
       execFile("terminal-notifier", tnArgs, () => {});
     } else if (process.platform === "linux") {
-      execFile("notify-send", ["-a", "pi-permission-layers", title, message]);
+      const args = ["-a", "pi-permission-layers", title, message];
+
+      if (config.systemNotifications === "persistent")
+        args.push("-u", "critical");
+
+      execFile("notify-send", args);
     }
   } catch {
     // Silently fail if notifications unavailable

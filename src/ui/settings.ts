@@ -6,6 +6,7 @@ import { getSettingsListTheme } from "@earendil-works/pi-coding-agent";
 import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
 import { loadPermissionConfig, savePermissionConfig } from "../core/settings";
 import { invalidateConfigCache } from "../core/tools";
+import { Notification } from "../core/types";
 
 export const createSettingsList = (done: () => void): SettingsList => {
   const config = loadPermissionConfig();
@@ -25,6 +26,13 @@ export const createSettingsList = (done: () => void): SettingsList => {
       currentValue: config.forceUI ? "on" : "off",
       values: ["on", "off"],
     },
+    {
+      id: "system-notifications",
+      label: "System notifications",
+      description: "Control OS notification behavior",
+      currentValue: config.systemNotifications ?? "unfocused",
+      values: ["off", "on", "unfocused", "persistent"],
+    },
   ];
 
   return new SettingsList(
@@ -35,6 +43,8 @@ export const createSettingsList = (done: () => void): SettingsList => {
       const cfg = loadPermissionConfig();
       if (id === "quiet-startup") cfg.quietStartup = newValue === "on";
       if (id === "force-ui") cfg.forceUI = newValue === "on";
+      if (id === "system-notifications")
+        cfg.systemNotifications = newValue as Notification;
       savePermissionConfig(cfg);
       invalidateConfigCache();
     },

@@ -48,7 +48,8 @@ Edit ~/.pi/agent/settings.json directly for full control:
       { "from": "nvm exec", "to": "" }
     ],
     "quietStartup": true,
-    "forceUI": true
+    "forceUI": true,
+    "systemNotifications": "unfocused"
   }
 }`;
 

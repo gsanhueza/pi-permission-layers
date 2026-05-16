@@ -8,13 +8,9 @@ import { SettingsManager } from "./manager";
 import type { PermissionLevel, PermissionMode } from "./types";
 import { LEVELS, PERMISSION_MODES } from "./types";
 
-const settingsPath = path.join(
-  process.env.HOME || "",
-  ".pi",
-  "agent",
-  "settings.json",
-);
-const settingsManager = new SettingsManager(settingsPath);
+const getSettingsPath = () =>
+  path.join(process.env.HOME || "", ".pi", "agent", "settings.json");
+const settingsManager = new SettingsManager(getSettingsPath());
 
 // ============================================================================
 // GLOBAL PERMISSION LEVEL

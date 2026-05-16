@@ -6,8 +6,22 @@
  *
  * Run with: npm test
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, test, vi } from "vitest";
+
+// Mock settings module to avoid reading from real ~/.pi/agent/settings.json
+const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
+const mockSettings = JSON.parse(
+  readFileSync(mockSettingsPath, "utf-8"),
+) as Record<string, unknown>;
+
+vi.mock("../src/core/settings", () => ({
+  loadPermissionConfig: () =>
+    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
+}));
+
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { describe, expect, test } from "vitest";
 import type { PermissionState } from "../src/core/interfaces";
 import { handleBashToolCall as handleBashToolCall_noUI } from "../src/no-ui/handlers";
 import {

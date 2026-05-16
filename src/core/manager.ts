@@ -5,6 +5,7 @@ import {
   PermissionOverrides,
   PermissionPrefixMapping,
 } from "./interfaces";
+import { Notification } from "./types";
 
 export class SettingsManager {
   constructor(private readonly settingsPath: string) {}
@@ -47,6 +48,7 @@ export class SettingsManager {
     const prefixMappings = this.validatePrefixMappings(raw);
     const quietStartup = this.validateQuietStartup(raw);
     const forceUI = this.validateForceUI(raw);
+    const systemNotifications = this.validateSystemNotifications(raw);
 
     // Only return what we know is not default
     const response: PermissionConfig = {};
@@ -55,6 +57,8 @@ export class SettingsManager {
     if (prefixMappings.length > 0) response.prefixMappings = prefixMappings;
     if (quietStartup !== undefined) response.quietStartup = quietStartup;
     if (forceUI !== undefined) response.forceUI = forceUI;
+    if (systemNotifications !== undefined)
+      response.systemNotifications = systemNotifications;
 
     return response;
   }
@@ -116,5 +120,11 @@ export class SettingsManager {
 
   private validateForceUI(raw: PermissionConfig): boolean | undefined {
     return raw.forceUI;
+  }
+
+  private validateSystemNotifications(
+    raw: PermissionConfig,
+  ): Notification | undefined {
+    return raw.systemNotifications;
   }
 }
