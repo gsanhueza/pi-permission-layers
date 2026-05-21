@@ -54,6 +54,8 @@ export const handleToolCall = async (
   ctx: ExtensionContext,
   state: PermissionState,
 ): Promise<ToolCallResult> => {
+  if (state.currentLevel === "bypassed") return undefined;
+
   if (event.toolName === "bash") {
     return handleBashToolCall(state, event.input.command as string, ctx);
   }
