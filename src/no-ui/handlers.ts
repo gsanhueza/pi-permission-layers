@@ -8,6 +8,7 @@ import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
+import { loadPermissionConfig } from "../core/settings";
 
 // ============================================================================
 // DANGEROUS COMMAND HANDLER
@@ -86,7 +87,8 @@ export const handleMcpToolCall = (
   state: PermissionState,
   input: McpToolInput,
 ): { block: true; reason: string } => {
-  const { targetTool, requiredLevel } = parseMcpInput(input);
+  const config = loadPermissionConfig();
+  const { targetTool, requiredLevel } = parseMcpInput(input, config);
 
   return {
     block: true,

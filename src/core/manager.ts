@@ -49,6 +49,8 @@ export class SettingsManager {
     const quietStartup = this.validateQuietStartup(raw);
     const forceUI = this.validateForceUI(raw);
     const systemNotifications = this.validateSystemNotifications(raw);
+    const knownReadTools = this.validateKnownReadTools(raw);
+    const readonlyMcpTools = this.validateReadonlyMcpTools(raw);
 
     // Only return what we know is not default
     const response: PermissionConfig = {};
@@ -59,6 +61,8 @@ export class SettingsManager {
     if (forceUI !== undefined) response.forceUI = forceUI;
     if (systemNotifications !== undefined)
       response.systemNotifications = systemNotifications;
+    if (knownReadTools !== undefined) response.knownReadTools = knownReadTools;
+    if (readonlyMcpTools !== undefined) response.readonlyMcpTools = readonlyMcpTools;
 
     return response;
   }
@@ -126,5 +130,29 @@ export class SettingsManager {
     raw: PermissionConfig,
   ): Notification | undefined {
     return raw.systemNotifications;
+  }
+
+  private validateKnownReadTools(raw: PermissionConfig): string[] | undefined {
+    const tools = raw.knownReadTools;
+    if (!Array.isArray(tools)) return undefined;
+
+    const valid = tools
+      .filter((t): t is string => typeof t === "string" && t.length > 0)
+      .slice(0, 50);
+
+    return valid.length > 0 ? valid : undefined;
+  }
+
+  private validateReadonlyMcpTools(
+    raw: PermissionConfig,
+  ): string[] | undefined {
+    const tools = raw.readonlyMcpTools;
+    if (!Array.isArray(tools)) return undefined;
+
+    const valid = tools
+      .filter((t): t is string => typeof t === "string" && t.length > 0)
+      .slice(0, 100);
+
+    return valid.length > 0 ? valid : undefined;
   }
 }

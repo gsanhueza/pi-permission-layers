@@ -1,5 +1,6 @@
 import { initializeSessionState } from "../shared/events";
 import { isKnownReadTool } from "../shared/tools";
+import { loadPermissionConfig } from "../core/settings";
 import {
   handleBashToolCall,
   handleMcpToolCall,
@@ -71,10 +72,11 @@ export const handleToolCall = async (
     });
   }
 
-  if (!isKnownReadTool(event.toolName)) {
+  const config = loadPermissionConfig();
+  if (!isKnownReadTool(event.toolName, config)) {
     return {
       block: true,
-      reason: `⚠️ Unknown tool "${event.toolName}" requires High permission`,
+      reason: `⚠️ [pi-permission-layers] Unknown tool "${event.toolName}" requires High permission; refer to pi-permission-layers/docs/architecture.md for whitelist information`,
     };
   }
 

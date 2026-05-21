@@ -2,6 +2,7 @@
  * Shared tool detection logic used by both UI and no-UI handlers.
  */
 
+import type { PermissionConfig } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 
 // ============================================================================
@@ -10,8 +11,13 @@ import type { PermissionLevel } from "../core/types";
 
 export const KNOWN_READ_TOOLS = new Set(["read", "ls", "grep", "find"]);
 
-export const isKnownReadTool = (toolName: string): boolean => {
-  return KNOWN_READ_TOOLS.has(toolName);
+const getKnownReadTools = (config?: PermissionConfig): Set<string> => {
+  const tools = config?.knownReadTools ?? Array.from(KNOWN_READ_TOOLS);
+  return new Set(tools);
+};
+
+export const isKnownReadTool = (toolName: string, config?: PermissionConfig): boolean => {
+  return getKnownReadTools(config).has(toolName);
 };
 
 // ============================================================================
@@ -67,6 +73,11 @@ export const READONLY_MCP_TOOLS = new Set([
   "atlassian_getIssueLinkTypes",
 ]);
 
+const getReadonlyMcpTools = (config?: PermissionConfig): Set<string> => {
+  const tools = config?.readonlyMcpTools ?? Array.from(READONLY_MCP_TOOLS);
+  return new Set(tools);
+};
+
 export const MCP_READ_ONLY_MODES = new Set([
   "search",
   "describe",
@@ -91,7 +102,7 @@ export interface McpToolInput {
   [key: string]: unknown;
 }
 
-export const parseMcpInput = (input: McpToolInput): McpToolInfo => {
+export const parseMcpInput = (input: McpToolInput, config?: PermissionConfig): McpToolInfo => {
   let targetTool: string;
   let mode: string;
 
@@ -122,7 +133,7 @@ export const parseMcpInput = (input: McpToolInput): McpToolInfo => {
 
   if (MCP_READ_ONLY_MODES.has(mode)) {
     requiredLevel = "minimal";
-  } else if (mode === "call" && READONLY_MCP_TOOLS.has(targetTool)) {
+  } else if (mode === "call" && getReadonlyMcpTools(config).has(targetTool)) {
     requiredLevel = "low";
   } else {
     requiredLevel = "medium";

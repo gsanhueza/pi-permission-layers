@@ -16,6 +16,10 @@ export interface PermissionConfig {
   forceUI?: boolean;
   /** System notifications */
   systemNotifications?: Notification;
+  /** Allowed read-only tools (defaults: ["read", "ls", "grep", "find"]) */
+  knownReadTools?: string[];
+  /** Allowed read-only MCP tools (defaults to standard set) */
+  readonlyMcpTools?: string[];
 }
 
 export interface PermissionOverrides {

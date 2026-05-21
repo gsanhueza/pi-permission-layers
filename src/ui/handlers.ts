@@ -9,6 +9,7 @@ import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
+import { loadPermissionConfig } from "../core/settings";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
 
@@ -153,7 +154,8 @@ export const handleMcpToolCall = async (
   input: McpToolInput,
   ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> => {
-  const { targetTool, requiredLevel } = parseMcpInput(input);
+  const config = loadPermissionConfig();
+  const { targetTool, requiredLevel } = parseMcpInput(input, config);
 
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[requiredLevel]) {
     ctx.ui.notify(`MCP tool: ${targetTool}`, "info");
