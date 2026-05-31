@@ -4,6 +4,8 @@ import {
   PermissionConfig,
   PermissionOverrides,
   PermissionPrefixMapping,
+  ToolPermissionConfig,
+  McpPermissionConfig,
 } from "./interfaces";
 import { Notification } from "./types";
 
@@ -46,6 +48,8 @@ export class SettingsManager {
 
     const overrides = this.validateOverrides(raw);
     const prefixMappings = this.validatePrefixMappings(raw);
+    const tools = this.validateToolMcpConfig(raw.tools, "tools");
+    const mcp = this.validateToolMcpConfig(raw.mcp, "mcp");
     const quietStartup = this.validateQuietStartup(raw);
     const forceUI = this.validateForceUI(raw);
     const systemNotifications = this.validateSystemNotifications(raw);
@@ -55,6 +59,8 @@ export class SettingsManager {
 
     if (Object.keys(overrides).length > 0) response.overrides = overrides;
     if (prefixMappings.length > 0) response.prefixMappings = prefixMappings;
+    if (tools) response.tools = tools;
+    if (mcp) response.mcp = mcp;
     if (quietStartup !== undefined) response.quietStartup = quietStartup;
     if (forceUI !== undefined) response.forceUI = forceUI;
     if (systemNotifications !== undefined)
@@ -87,6 +93,34 @@ export class SettingsManager {
     }
 
     return response;
+  }
+
+  private validateToolMcpConfig(
+    config: ToolPermissionConfig | McpPermissionConfig | undefined,
+    _fieldName: "tools" | "mcp",
+  ): ToolPermissionConfig | McpPermissionConfig | undefined {
+    if (!config || typeof config !== "object") return undefined;
+
+    const response: ToolPermissionConfig | McpPermissionConfig = {};
+    const levels = ["minimal", "low", "medium", "high", "dangerous"] as const;
+
+    for (const level of levels) {
+      const items = config[level];
+      if (Array.isArray(items)) {
+        const valid = items
+          .filter((p): p is string => typeof p === "string" && p.length > 0)
+          .slice(0, 100);
+
+        if (valid.length > 0) {
+          response[level] = valid;
+        }
+      }
+    }
+
+    const hasEntries = Object.keys(response).length > 0;
+    return hasEntries
+      ? (response as ToolPermissionConfig | McpPermissionConfig)
+      : undefined;
   }
 
   private validatePrefixMappings(

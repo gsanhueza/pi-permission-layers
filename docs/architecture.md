@@ -31,7 +31,7 @@ src/
     ├── manager.ts          # SettingsManager class (file I/O, atomic writes, validation)
     ├── settings.ts         # Global settings persistence (delegates to SettingsManager)
     ├── tools.ts            # Config caching, glob→regex conversion, override checking, prefix mappings
-    ├── interfaces.ts       # PermissionConfig, PermissionOverrides, PermissionPrefixMapping, Classification, PermissionState, tool call options
+    ├── interfaces.ts       # PermissionConfig, PermissionOverrides, PermissionPrefixMapping, ToolPermissionConfig, McpPermissionConfig, Classification, PermissionState, tool call options
     ├── types.ts            # PermissionLevel, PermissionMode, LEVELS, LEVEL_INFO, PERMISSION_MODES
     └── levels/
         ├── index.ts        # `getCommandName()` helper + re-exports `isMinimalLevel`, `isMediumLevel`, `isHighLevel`
@@ -132,8 +132,9 @@ Atomic file writes and validation are handled by `SettingsManager` (see `core/ma
 `SettingsManager` class — file I/O, atomic writes, and config validation:
 - `load()` — Reads and parses `settings.json` (returns `{}` on failure)
 - `save(settings)` — Atomic write: writes to `.tmp` file, then renames
-- `validate(raw)` — Sanitizes `PermissionConfig`: strips invalid entries, caps overrides at 100 per level and prefix mappings at 50
+- `validate(raw)` — Sanitizes `PermissionConfig`: strips invalid entries, caps overrides at 100 per level, tool/MCP entries at 100 per level, and prefix mappings at 50
 - `validateOverrides(raw)` — Filters patterns to valid non-empty strings per level
+- `validateToolMcpConfig(raw, fieldName)` — Filters tool/MCP entries to valid non-empty strings per level (100 cap)
 - `validatePrefixMappings(raw)` — Filters mappings to valid `{from, to}` objects
 
 ### `core/tools.ts`
@@ -237,9 +238,11 @@ Primitive types and constants:
 ### `core/interfaces.ts`
 
 Interface definitions:
-- `PermissionConfig` — Overrides (per-level glob patterns), prefix mappings, quietStartup, forceUI, systemNotifications
+- `PermissionConfig` — Overrides (per-level glob patterns), prefix mappings, tools (per-tool permission levels), mcp (per-MCP permission levels), quietStartup, forceUI, systemNotifications
 - `PermissionOverrides` — Per-level override arrays: `{ minimal?, low?, medium?, high?, dangerous? }`
 - `PermissionPrefixMapping` — `{ from: string, to: string }` for normalizing version-manager commands
+- `ToolPermissionConfig` — Per-level tool name assignments: `{ minimal?, low?, medium?, high?, dangerous? }`
+- `McpPermissionConfig` — Per-level MCP tool/mode name assignments: `{ minimal?, low?, medium?, high?, dangerous? }`
 - `Classification` — `{ level, dangerous }`
 - `PermissionState` — `currentLevel`, `isSessionOnly`, `permissionMode`, `isModeSessionOnly`
 - `WriteToolCallOptions` — Options passed to write tool handler (state, toolName, filePath, ctx)
@@ -252,7 +255,7 @@ Interface definitions:
 - Handles tmux terminal detection for appropriate notifications
 - Supports both interactive and print mode (`-p`) execution
 - Atomic file writes for settings persistence (write to `.tmp`, then `rename`)
-- Settings validation limits overrides to 100 patterns per level and 50 prefix mappings total
+- Settings validation limits overrides to 100 patterns per level, tool/MCP entries to 100 per level, and 50 prefix mappings total
 - Unknown tools (not in read whitelist) are blocked with HIGH permission requirement
 - Interactive and non-interactive handlers are fully separated into `ui/` and `no-ui/` directories
 - Shared logic lives in `shared/` to avoid duplication between the two modes

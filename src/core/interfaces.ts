@@ -10,12 +10,32 @@ export interface PermissionConfig {
   overrides?: PermissionOverrides;
   /** Prefix mappings to normalize commands before classification */
   prefixMappings?: PermissionPrefixMapping[];
+  /** Per-tool permission level assignments */
+  tools?: ToolPermissionConfig;
+  /** Per-MCP-tool permission level assignments */
+  mcp?: McpPermissionConfig;
   /** Hide startup usage help */
   quietStartup?: boolean;
   /** Force interactive UI mode regardless of context */
   forceUI?: boolean;
   /** System notifications */
   systemNotifications?: Notification;
+}
+
+export interface ToolPermissionConfig {
+  minimal?: string[];
+  low?: string[];
+  medium?: string[];
+  high?: string[];
+  dangerous?: string[];
+}
+
+export interface McpPermissionConfig {
+  minimal?: string[];
+  low?: string[];
+  medium?: string[];
+  high?: string[];
+  dangerous?: string[];
 }
 
 export interface PermissionOverrides {

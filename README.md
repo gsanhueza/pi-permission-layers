@@ -125,6 +125,15 @@ Global settings are stored in `~/.pi/agent/settings.json`:
       "high": ["rm -rf *"],
       "dangerous": ["dd if=* of=/dev/*"]
     },
+    "tools": {
+      "minimal": ["read", "ls", "grep", "find"],
+      "low": ["write", "edit"]
+    },
+    "mcp": {
+      "minimal": ["search", "describe", "list", "status", "connect"],
+      "low": ["serper_search", "serper_scrape", "github_list_commits"],
+      "medium": ["github_create_issue"]
+    },
     "prefixMappings": [
       { "from": "fvm flutter", "to": "flutter" },
       { "from": "nvm exec", "to": "" },
@@ -144,6 +153,10 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `overrides` | `PermissionOverrides` | `{}` | Per-level glob patterns for shell command overrides |
+| `tools` | `ToolPermissionConfig` | `{}` | Per-level tool name assignments (delta model — only specify what you want to change) |
+| `mcp` | `McpPermissionConfig` | `{}` | Per-level MCP tool/mode name assignments (delta model — only specify what you want to change) |
+| `prefixMappings` | `PermissionPrefixMapping[]` | `[]` | Normalize version-manager commands to their base tools |
 | `quietStartup` | `boolean` | `false` | Suppress the startup notification message |
 | `forceUI` | `boolean` | `false` | Force interactive UI mode regardless of context (e.g., in print mode) |
 | `systemNotifications` | `"off" \| "on" \| "unfocused" \| "persistent"` | `"unfocused"` | Control OS notifications (`"off"` = fully disabled, `"unfocused"` = only when terminal is not focused, `"on"` = always show, `"persistent"` = always show with critical/persistent priority) |
@@ -167,6 +180,42 @@ Override priority (highest to lowest):
 > **Note:** When a command matches patterns in multiple levels, the **most restrictive** level wins. Avoid overlapping patterns across levels. For example, don't put `tmux *` in medium if you want `tmux list-*` to be minimal.
 
 > **Note on the `low` level:** `low` is not a standalone command classification level (there is no `isLowLevel()` classifier). Instead, it serves as a permission threshold used for output redirections, write/edit tool calls, known read-only MCP tools, and as an override target. Commands like `mkdir`, `cp`, `mv`, `ln`, and `touch` are classified as `medium`, not `low`.
+
+### Tool Permission Config (`tools`)
+
+Assign permission levels to individual tool names. This uses a **delta/override model**: only specify what you want to change — unmentioned tools keep their default levels.
+
+| Level | Default tools | Description |
+|-------|---------------|-------------|
+| `minimal` | `read`, `ls`, `grep`, `find` | Read-only operations |
+| `low` | `write`, `edit` | File operations |
+| `medium` | *(implicit)* | All other tools (blocked by default) |
+| `high` | *(implicit — blocked)* | Unknown tools require high permission |
+| `dangerous` | *(none by default)* | Always prompt, even at high level |
+
+**Example:** `{ "minimal": ["read"], "low": ["grep"] }`:
+- `read` → minimal (explicit override)
+- `grep` → low (explicit override, moves up from default minimal)
+- `ls`, `find` → minimal (defaults preserved — not mentioned in config)
+- `write`, `edit` → low (defaults preserved)
+
+> **Note:** `bash` is **ignored** in the `tools` config. Shell commands are classified through `classifyCommand()` and the `overrides` config instead.
+
+### MCP Permission Config (`mcp`)
+
+Assign permission levels to MCP tools and modes. MCP config supports two types of entries:
+- **Mode names** (`search`, `describe`, `list`, `status`, `connect`) — match against the call's mode
+- **Tool names** (`serper_search`, `github_list_commits`) — match against the specific tool
+
+Tool name match takes precedence over mode match (more specific → more general).
+
+| Level | Default entries | Description |
+|-------|-----------------|-------------|
+| `minimal` | `search`, `describe`, `list`, `status`, `connect` (modes) | Read-only MCP modes |
+| `low` | ~45 read-only MCP tools (GitHub read, Atlassian read, etc.) | Read-only MCP tools |
+| `medium` | *(implicit)* | All other MCP tools |
+| `high` | *(implicit — blocked)* | Unknown MCP tools require high permission |
+| `dangerous` | *(none by default)* | Always prompt, even at high level |
 
 **Examples:**
 ```json
