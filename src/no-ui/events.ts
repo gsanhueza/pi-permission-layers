@@ -10,6 +10,7 @@ import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {
   handleBashToolCall,
+  handleDangerousCommand,
   handleMcpToolCall,
   handleWriteToolCall,
   requestPermission,
@@ -59,6 +60,10 @@ export const handleToolCall = async (
       block: true,
       reason: `⚠️ Unknown tool "${event.toolName}" requires High permission`,
     };
+  }
+
+  if (classification.dangerous) {
+    return handleDangerousCommand(event.toolName);
   }
 
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {

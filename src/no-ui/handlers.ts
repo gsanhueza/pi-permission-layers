@@ -125,6 +125,10 @@ export const handleWriteToolCall = (
     };
   }
 
+  if (classification.dangerous) {
+    return handleDangerousCommand(`${toolName}: ${filePath}`);
+  }
+
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
     return undefined;
   }
