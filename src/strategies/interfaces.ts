@@ -19,14 +19,12 @@ export interface PermissionStrategy {
 
   /** Handle the `/permission` command. */
   handlePermissionCommand(
-    state: PermissionState,
     args: string,
     ctx: ExtensionCommandContext,
   ): Promise<void>;
 
   /** Handle the `/permission-mode` command. */
   handlePermissionModeCommand(
-    state: PermissionState,
     args: string,
     ctx: ExtensionCommandContext,
   ): Promise<void>;
@@ -34,7 +32,7 @@ export interface PermissionStrategy {
   // ── Events ────────────────────────────────────────────────────────
 
   /** Called on session start (session init + notifications). */
-  handleSessionStart(state: PermissionState, ctx: ExtensionContext): void;
+  handleSessionStart(ctx: ExtensionContext): void;
 
   /**
    * Called on every tool call to decide whether to block or allow.
@@ -43,7 +41,6 @@ export interface PermissionStrategy {
    */
   handleToolCall(
     event: ToolCallEvent,
-    state: PermissionState,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined>;
 
@@ -54,16 +51,11 @@ export interface PermissionStrategy {
 
   /** Set the permission level, optionally persisting globally. */
   setLevel(
-    state: PermissionState,
     level: PermissionLevel,
     saveGlobally: boolean,
     ctx: ExtensionContext,
   ): void;
 
   /** Set the permission mode, optionally persisting globally. */
-  setMode(
-    state: PermissionState,
-    mode: PermissionMode,
-    saveGlobally: boolean,
-  ): void;
+  setMode(mode: PermissionMode, saveGlobally: boolean): void;
 }

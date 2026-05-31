@@ -26,6 +26,12 @@ import { PermissionStrategy } from "./interfaces";
  * Concrete strategies only implement the abstract presentation hooks.
  */
 export abstract class BasePermissionStrategy implements PermissionStrategy {
+  public readonly state: PermissionState;
+
+  constructor() {
+    this.state = this.createInitialState();
+  }
+
   // ── State ────────────────────────────────────────────────────────
 
   createInitialState(): PermissionState {
@@ -35,30 +41,26 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       permissionMode: "ask",
       isModeSessionOnly: false,
     };
+
     initializeSessionState(state);
     return state;
   }
 
   setLevel(
-    state: PermissionState,
     level: PermissionLevel,
     saveGlobally: boolean,
     _ctx: ExtensionContext,
   ): void {
-    state.currentLevel = level;
-    state.isSessionOnly = !saveGlobally;
+    this.state.currentLevel = level;
+    this.state.isSessionOnly = !saveGlobally;
     if (saveGlobally) {
       saveGlobalPermissionLevel(level);
     }
   }
 
-  setMode(
-    state: PermissionState,
-    mode: PermissionMode,
-    saveGlobally: boolean,
-  ): void {
-    state.permissionMode = mode;
-    state.isModeSessionOnly = !saveGlobally;
+  setMode(mode: PermissionMode, saveGlobally: boolean): void {
+    this.state.permissionMode = mode;
+    this.state.isModeSessionOnly = !saveGlobally;
     if (saveGlobally) {
       saveGlobalPermissionMode(mode);
     }
@@ -66,26 +68,21 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   // ── Session ──────────────────────────────────────────────────────
 
-  handleSessionStart(state: PermissionState, ctx: ExtensionContext): void {
-    initializeSessionState(state);
-    this.onSessionStart(state, ctx);
+  handleSessionStart(ctx: ExtensionContext): void {
+    initializeSessionState(this.state);
+    this.onSessionStart(ctx);
   }
 
-  protected abstract onSessionStart(
-    state: PermissionState,
-    ctx: ExtensionContext,
-  ): void;
+  protected abstract onSessionStart(ctx: ExtensionContext): void;
 
   // ── Tool handlers ────────────────────────────────────────────────
 
   protected abstract onDangerous(
     command: string,
-    state: PermissionState,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined>;
 
   protected abstract onRequest(
-    state: PermissionState,
     requiredLevel: PermissionLevel,
     message: string,
     details: string,
@@ -98,20 +95,18 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): void;
 
   async handleBashToolCall(
-    state: PermissionState,
     command: string,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    if (state.currentLevel === "bypassed") return undefined;
+    if (this.state.currentLevel === "bypassed") return undefined;
 
     const classification = classifyCommand(command);
 
     if (classification.dangerous) {
-      return this.onDangerous(command, state, ctx);
+      return this.onDangerous(command, ctx);
     }
 
     return this.onRequest(
-      state,
       classification.level,
       `$ ${command}`,
       `Command: ${command}`,
@@ -120,7 +115,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   }
 
   async handleMcpToolCall(
-    state: PermissionState,
     input: McpToolInput,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
@@ -131,16 +125,15 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     );
 
     if (dangerous) {
-      return this.onDangerous(`MCP: ${targetTool}`, state, ctx);
+      return this.onDangerous(`MCP: ${targetTool}`, ctx);
     }
 
-    if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[requiredLevel]) {
+    if (LEVEL_INDEX[this.state.currentLevel] >= LEVEL_INDEX[requiredLevel]) {
       this.onMcpAllowed(targetTool, ctx);
       return undefined;
     }
 
     return this.onRequest(
-      state,
       requiredLevel,
       `MCP tool wants to call: ${targetTool}`,
       `MCP tool "${targetTool}"`,
@@ -149,19 +142,17 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   }
 
   async handleWriteToolCall(
-    state: PermissionState,
     toolName: string,
     filePath: string,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    if (state.currentLevel === "bypassed") return undefined;
+    if (this.state.currentLevel === "bypassed") return undefined;
 
     const config = getCachedConfig();
     const classification = resolveToolLevel(toolName, config.tools);
     const action = toolName === "write" ? "Write" : "Edit";
 
     return this.checkAndHandleTool(
-      state,
       classification,
       `${toolName}: ${filePath}`,
       `${action} ${filePath}`,
@@ -172,20 +163,19 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   async handleToolCall(
     event: ToolCallEvent,
-    state: PermissionState,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
     if (event.toolName === "bash") {
-      return this.handleBashToolCall(state, event.input.command as string, ctx);
+      return this.handleBashToolCall(event.input.command as string, ctx);
     }
 
     if (event.toolName === "mcp") {
-      return this.handleMcpToolCall(state, event.input, ctx);
+      return this.handleMcpToolCall(event.input, ctx);
     }
 
     if (["write", "edit"].includes(event.toolName)) {
       const input = event.input as { path: string };
-      return this.handleWriteToolCall(state, event.toolName, input.path, ctx);
+      return this.handleWriteToolCall(event.toolName, input.path, ctx);
     }
 
     // Fallback: all other tools (read, ls, grep, find, unknown)
@@ -193,7 +183,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     const classification = resolveToolLevel(event.toolName, config.tools);
 
     return this.checkAndHandleTool(
-      state,
       classification,
       event.toolName,
       `Tool: ${event.toolName}`,
@@ -203,18 +192,17 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   }
 
   protected async checkAndHandleTool(
-    state: PermissionState,
     classification: Classification | null,
     toolName: string,
     message: string,
     details: string,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    const result = classifyAndCheck(state, classification);
+    const result = classifyAndCheck(this.state, classification);
 
     if (result.blocked) {
       if (result.reason === "dangerous") {
-        return this.onDangerous(toolName, state, ctx);
+        return this.onDangerous(toolName, ctx);
       }
       return {
         block: true,
@@ -222,33 +210,19 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       };
     }
 
-    return this.onRequest(
-      state,
-      result.classification!.level,
-      message,
-      details,
-      ctx,
-    );
+    return this.onRequest(result.classification!.level, message, details, ctx);
   }
 
   // ── Command handlers ─────────────────────────────────────────────
 
-  protected abstract onViewLevel(
-    state: PermissionState,
-    ctx: ExtensionCommandContext,
-  ): Promise<void>;
+  protected abstract onViewLevel(ctx: ExtensionCommandContext): Promise<void>;
   protected abstract onSetLevel(
     level: PermissionLevel,
-    state: PermissionState,
     ctx: ExtensionCommandContext,
   ): Promise<void>;
-  protected abstract onViewMode(
-    state: PermissionState,
-    ctx: ExtensionCommandContext,
-  ): Promise<void>;
+  protected abstract onViewMode(ctx: ExtensionCommandContext): Promise<void>;
   protected abstract onSetMode(
     mode: PermissionMode,
-    state: PermissionState,
     ctx: ExtensionCommandContext,
   ): Promise<void>;
   protected abstract onSettings(ctx: ExtensionCommandContext): Promise<void>;
@@ -259,7 +233,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   }
 
   async handlePermissionCommand(
-    state: PermissionState,
     args: string,
     ctx: ExtensionCommandContext,
   ): Promise<void> {
@@ -281,16 +254,15 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     // Level specified directly
     if (arg && LEVELS.includes(arg as PermissionLevel)) {
       const newLevel = arg as PermissionLevel;
-      await this.onSetLevel(newLevel, state, ctx);
+      await this.onSetLevel(newLevel, ctx);
       return;
     }
 
     // No args: show current level
-    await this.onViewLevel(state, ctx);
+    await this.onViewLevel(ctx);
   }
 
   async handlePermissionModeCommand(
-    state: PermissionState,
     args: string,
     ctx: ExtensionCommandContext,
   ): Promise<void> {
@@ -299,11 +271,11 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     // Mode specified directly
     if (arg && PERMISSION_MODES.includes(arg as PermissionMode)) {
       const newMode = arg as PermissionMode;
-      await this.onSetMode(newMode, state, ctx);
+      await this.onSetMode(newMode, ctx);
       return;
     }
 
     // No args: show current mode
-    await this.onViewMode(state, ctx);
+    await this.onViewMode(ctx);
   }
 }

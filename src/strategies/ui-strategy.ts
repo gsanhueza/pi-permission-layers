@@ -2,7 +2,6 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import type { PermissionState } from "../core/interfaces";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import {
   LEVELS,
@@ -23,12 +22,11 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
   // ── State ────────────────────────────────────────────────────────
 
   override setLevel(
-    state: PermissionState,
     level: PermissionLevel,
     saveGlobally: boolean,
     ctx: ExtensionContext,
   ): void {
-    super.setLevel(state, level, saveGlobally, ctx);
+    super.setLevel(level, saveGlobally, ctx);
     if (ctx.ui?.setStatus) {
       ctx.ui.setStatus("authority", getStatusText(level));
     }
@@ -38,7 +36,7 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
 
   protected async onDangerous(
     command: string,
-    state: PermissionState,
+
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
     await notifySystem(
@@ -46,7 +44,7 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
       `Dangerous command: ${command}`,
     );
 
-    if (state.permissionMode === "block") {
+    if (this.state.permissionMode === "block") {
       return {
         block: true,
         reason: `Blocked by permission mode (block). Dangerous command: ${command}
@@ -70,16 +68,15 @@ Use /permission-mode ask to enable confirmations.`,
   }
 
   protected async onRequest(
-    state: PermissionState,
     requiredLevel: PermissionLevel,
     message: string,
     _details: string,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    if (checkPermission(state, requiredLevel)) return undefined;
+    if (checkPermission(this.state, requiredLevel)) return undefined;
 
     const requiredInfo = LEVEL_INFO[requiredLevel];
-    const currentInfo = LEVEL_INFO[state.currentLevel];
+    const currentInfo = LEVEL_INFO[this.state.currentLevel];
 
     // System notification
     await notifySystem(
@@ -87,11 +84,11 @@ Use /permission-mode ask to enable confirmations.`,
       `${message}\nCurrent level: ${currentInfo.label}`,
     );
 
-    if (state.permissionMode === "block") {
+    if (this.state.permissionMode === "block") {
       return {
         block: true,
         reason: `${message}
-Blocked by permission (${state.currentLevel}, mode: block). Requires ${requiredInfo.label}.
+Blocked by permission (${this.state.currentLevel}, mode: block). Requires ${requiredInfo.label}.
 Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
       };
     }
@@ -107,7 +104,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     if (choice === "Allow once") return undefined;
 
     if (choice === allowAllLabel) {
-      this.setLevel(state, requiredLevel, false, ctx);
+      this.setLevel(requiredLevel, false, ctx);
       notify(ctx, `Permission → ${requiredInfo.label} (session only)`);
       return undefined;
     }
@@ -122,33 +119,27 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     notify(ctx, `MCP tool: ${toolName}`);
   }
 
-  protected onSessionStart(
-    state: PermissionState,
-    ctx: ExtensionContext,
-  ): void {
+  protected onSessionStart(ctx: ExtensionContext): void {
     if (ctx.ui?.setStatus) {
-      ctx.ui.setStatus("authority", getStatusText(state.currentLevel));
+      ctx.ui.setStatus("authority", getStatusText(this.state.currentLevel));
     }
-    if (state.currentLevel === "bypassed") {
+    if (this.state.currentLevel === "bypassed") {
       notify(ctx, "⚠️ Permission bypassed - all checks disabled!", "warning");
     } else if (!isQuietMode(ctx)) {
       notify(
         ctx,
-        `Permission: ${getStatusText(state.currentLevel)} (use /permission to change)`,
+        `Permission: ${getStatusText(this.state.currentLevel)} (use /permission to change)`,
       );
     }
-    if (state.permissionMode === "block") {
+    if (this.state.permissionMode === "block") {
       notify(ctx, "Permission mode: Block (use /permission-mode to change)");
     }
   }
 
-  protected async onViewLevel(
-    state: PermissionState,
-    ctx: ExtensionCommandContext,
-  ): Promise<void> {
+  protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
     const options = LEVELS.map((level) => {
       const info = LEVEL_INFO[level];
-      const marker = level === state.currentLevel ? " ← current" : "";
+      const marker = level === this.state.currentLevel ? " ← current" : "";
       return `${info.label}: ${info.desc}${marker}`;
     });
 
@@ -157,7 +148,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 
     const selectedLabel = choice.split(":")[0].trim();
     const newLevel = LEVELS.find((l) => LEVEL_INFO[l].label === selectedLabel);
-    if (!newLevel || newLevel === state.currentLevel) return;
+    if (!newLevel || newLevel === this.state.currentLevel) return;
 
     const scope = await ctx.ui.select("Save to:", [
       "Session only",
@@ -166,14 +157,14 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     if (!scope) return;
 
     const saveGlobally = scope === "Global (persists)";
-    this.setLevel(state, newLevel, saveGlobally, ctx);
+    this.setLevel(newLevel, saveGlobally, ctx);
     const saveMsg = saveGlobally ? " (saved globally)" : " (session only)";
     notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`);
   }
 
   protected async onSetLevel(
     level: PermissionLevel,
-    state: PermissionState,
+
     ctx: ExtensionCommandContext,
   ): Promise<void> {
     const scope = await ctx.ui.select("Save permission level to:", [
@@ -183,18 +174,15 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     if (!scope) return;
 
     const saveGlobally = scope === "Global (persists)";
-    this.setLevel(state, level, saveGlobally, ctx);
+    this.setLevel(level, saveGlobally, ctx);
     const saveMsg = saveGlobally ? " (saved globally)" : " (session only)";
     notify(ctx, `Permission: ${LEVEL_INFO[level].label}${saveMsg}`);
   }
 
-  protected async onViewMode(
-    state: PermissionState,
-    ctx: ExtensionCommandContext,
-  ): Promise<void> {
+  protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
     const options = PERMISSION_MODES.map((mode) => {
       const info = PERMISSION_MODE_INFO[mode];
-      const marker = mode === state.permissionMode ? " ← current" : "";
+      const marker = mode === this.state.permissionMode ? " ← current" : "";
       return `${info.label}: ${info.desc}${marker}`;
     });
 
@@ -205,7 +193,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     const newMode = PERMISSION_MODES.find(
       (m) => PERMISSION_MODE_INFO[m].label === selectedLabel,
     );
-    if (!newMode || newMode === state.permissionMode) return;
+    if (!newMode || newMode === this.state.permissionMode) return;
 
     const scope = await ctx.ui.select("Save to:", [
       "Session only",
@@ -214,7 +202,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     if (!scope) return;
 
     const saveGlobally = scope === "Global (persists)";
-    this.setMode(state, newMode, saveGlobally);
+    this.setMode(newMode, saveGlobally);
     const saveMsg = saveGlobally ? " (saved globally)" : " (session only)";
     notify(
       ctx,
@@ -224,7 +212,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 
   protected async onSetMode(
     mode: PermissionMode,
-    state: PermissionState,
+
     ctx: ExtensionCommandContext,
   ): Promise<void> {
     const scope = await ctx.ui.select("Save permission mode to:", [
@@ -234,7 +222,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     if (!scope) return;
 
     const saveGlobally = scope === "Global (persists)";
-    this.setMode(state, mode, saveGlobally);
+    this.setMode(mode, saveGlobally);
     const saveMsg = saveGlobally ? " (saved globally)" : " (session only)";
     notify(
       ctx,

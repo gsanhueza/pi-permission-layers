@@ -43,37 +43,38 @@ import {
   getPermissionCompletions,
   getPermissionModeCompletions,
 } from "./autocomplete";
+import { PermissionStrategy } from "./strategies/interfaces";
 import { NoUIPermissionStrategy } from "./strategies/no-ui-strategy";
 import { UIPermissionStrategy } from "./strategies/ui-strategy";
 import { hasInteractiveUI } from "./ui/ui";
 
 export default (pi: ExtensionAPI) => {
-  const strategy = hasInteractiveUI({} as ExtensionContext)
-    ? new UIPermissionStrategy()
-    : new NoUIPermissionStrategy();
-  const state = strategy.createInitialState();
+  let strategy: PermissionStrategy = new NoUIPermissionStrategy();
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
     getArgumentCompletions: getPermissionCompletions,
     handler: (args: string, ctx: ExtensionCommandContext) =>
-      strategy.handlePermissionCommand(state, args, ctx),
+      strategy.handlePermissionCommand(args, ctx),
   });
 
   pi.registerCommand("permission-mode", {
     description: "Set permission prompt mode (ask or block)",
     getArgumentCompletions: getPermissionModeCompletions,
     handler: (args: string, ctx: ExtensionCommandContext) =>
-      strategy.handlePermissionModeCommand(state, args, ctx),
+      strategy.handlePermissionModeCommand(args, ctx),
   });
 
   pi.on(
     "session_start",
-    async (_event: SessionStartEvent, ctx: ExtensionContext) =>
-      strategy.handleSessionStart(state, ctx),
+    async (_event: SessionStartEvent, ctx: ExtensionContext) => {
+      if (hasInteractiveUI(ctx)) strategy = new UIPermissionStrategy();
+
+      strategy.handleSessionStart(ctx);
+    },
   );
 
   pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) =>
-    strategy.handleToolCall(event, state, ctx),
+    strategy.handleToolCall(event, ctx),
   );
 };
