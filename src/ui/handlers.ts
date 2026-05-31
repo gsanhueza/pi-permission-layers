@@ -7,6 +7,8 @@ import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
+import { getCachedConfig } from "../core/tools";
+import { resolveToolLevel } from "../core/tool-classifier";
 import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
 import { setLevel } from "./state";
@@ -153,7 +155,13 @@ export const handleMcpToolCall = async (
   input: McpToolInput,
   ctx: ExtensionContext,
 ): Promise<{ block: true; reason: string } | undefined> => {
-  const { targetTool, requiredLevel } = parseMcpInput(input);
+  const config = getCachedConfig();
+  const { targetTool, requiredLevel, dangerous } = parseMcpInput(input, config.mcp);
+
+  // Dangerous tools always require confirmation
+  if (dangerous) {
+    return handleDangerousCommand(`MCP: ${targetTool}`, state, ctx);
+  }
 
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[requiredLevel]) {
     ctx.ui.notify(`MCP tool: ${targetTool}`, "info");
@@ -180,14 +188,33 @@ export const handleWriteToolCall = async (
   const { state, toolName, filePath, ctx } = opts;
 
   if (state.currentLevel === "bypassed") return undefined;
-  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX["low"]) return undefined;
+
+  const config = getCachedConfig();
+  const classification = resolveToolLevel(toolName, config.tools);
+
+  // Fallback to default low for known tools, or block if unknown
+  if (!classification) {
+    return {
+      block: true,
+      reason: `Unknown tool "${toolName}" requires High permission`,
+    };
+  }
+
+  // Dangerous tools always require confirmation
+  if (classification.dangerous) {
+    return handleDangerousCommand(`${toolName}: ${filePath}`, state, ctx);
+  }
+
+  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
+    return undefined;
+  }
 
   const action = toolName === "write" ? "Write" : "Edit";
 
   return requestPermission({
     state,
     message: `${action} ${filePath}`,
-    requiredLevel: "low",
+    requiredLevel: classification.level,
     details: `${action}`,
     notifyTitle: "Permission Required",
     ctx,

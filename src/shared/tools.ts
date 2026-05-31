@@ -4,16 +4,7 @@
 
 import type { McpPermissionConfig } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
-import { resolveMcpLevel, resolveToolLevel } from "../core/tool-classifier";
-
-// ============================================================================
-// KNOWN READ-ONLY TOOLS
-// ============================================================================
-
-export const isKnownReadTool = (toolName: string): boolean => {
-  const classification = resolveToolLevel(toolName, undefined);
-  return classification !== null && classification.level === "minimal";
-};
+import { resolveMcpLevel } from "../core/tool-classifier";
 
 // ============================================================================
 // MCP TOOL INFO
@@ -23,6 +14,7 @@ export interface McpToolInfo {
   targetTool: string;
   mode: string;
   requiredLevel: PermissionLevel;
+  dangerous: boolean;
 }
 
 export interface McpToolInput {
@@ -69,16 +61,14 @@ export const parseMcpInput = (
   const classification = resolveMcpLevel(targetTool, mode, mcpConfig);
 
   let requiredLevel: PermissionLevel;
+  let dangerous = false;
   if (classification) {
-    if (classification.dangerous) {
-      requiredLevel = "high";
-    } else {
-      requiredLevel = classification.level;
-    }
+    dangerous = classification.dangerous;
+    requiredLevel = classification.dangerous ? "high" : classification.level;
   } else {
     // Not found in config or defaults — medium (current default for unknown MCP tools)
     requiredLevel = "medium";
   }
 
-  return { targetTool, mode, requiredLevel };
+  return { targetTool, mode, requiredLevel, dangerous };
 };

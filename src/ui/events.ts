@@ -1,10 +1,14 @@
 import { initializeSessionState } from "../shared/events";
-import { isKnownReadTool } from "../shared/tools";
 import {
   handleBashToolCall,
+  handleDangerousCommand,
   handleMcpToolCall,
   handleWriteToolCall,
+  requestPermission,
 } from "../ui/handlers";
+import { getCachedConfig } from "../core/tools";
+import { resolveToolLevel } from "../core/tool-classifier";
+import { LEVEL_INDEX } from "../core/types";
 import { getStatusText, isQuietMode } from "./ui";
 
 import {
@@ -71,12 +75,31 @@ export const handleToolCall = async (
     });
   }
 
-  if (!isKnownReadTool(event.toolName)) {
+  // Fallback: all other tools (read, ls, grep, find, or unknown)
+  const config = getCachedConfig();
+  const classification = resolveToolLevel(event.toolName, config.tools);
+
+  if (classification === null) {
     return {
       block: true,
       reason: `⚠️ Unknown tool "${event.toolName}" requires High permission`,
     };
   }
 
-  return undefined;
+  if (classification.dangerous) {
+    return handleDangerousCommand(event.toolName, state, ctx);
+  }
+
+  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
+    return undefined;
+  }
+
+  return requestPermission({
+    state,
+    message: `Tool: ${event.toolName}`,
+    requiredLevel: classification.level,
+    details: `Tool call: ${event.toolName}`,
+    notifyTitle: "Permission Required",
+    ctx,
+  });
 };

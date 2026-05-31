@@ -211,6 +211,7 @@ export const resolveMcpLevel = (
   }
 
   // 2. If the mode is a known mode, check mode-level entries in user config
+  //    (also falls back to defaults if not found in user config)
   if (KNOWN_MCP_MODES.has(mode)) {
     const modeResult = resolveLevel(mode, userConfig, DEFAULT_MCP_PERMISSIONS);
     if (modeResult) {
@@ -218,22 +219,6 @@ export const resolveMcpLevel = (
     }
   }
 
-  // 3. Fall back to defaults
-  // Check if the mode itself is a known read-only mode
-  if (mode === "call") {
-    // For call mode, check if the targetTool is a known read-only tool
-    const toolResult = resolveLevel(targetTool, undefined, DEFAULT_MCP_PERMISSIONS);
-    if (toolResult) {
-      return toolResult;
-    }
-  } else if (KNOWN_MCP_MODES.has(mode)) {
-    // For other known modes, check mode-level defaults
-    const modeResult = resolveLevel(mode, undefined, DEFAULT_MCP_PERMISSIONS);
-    if (modeResult) {
-      return modeResult;
-    }
-  }
-
-  // 4. Not found — caller treats as medium (current default)
+  // 3. Not found — caller treats as medium (current default)
   return null;
 };

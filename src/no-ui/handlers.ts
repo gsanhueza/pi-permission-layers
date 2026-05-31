@@ -6,6 +6,8 @@ import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
+import { getCachedConfig } from "../core/tools";
+import { resolveToolLevel } from "../core/tool-classifier";
 import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
 
@@ -86,12 +88,15 @@ export const handleMcpToolCall = (
   state: PermissionState,
   input: McpToolInput,
 ): { block: true; reason: string } => {
-  const { targetTool, requiredLevel } = parseMcpInput(input);
+  const config = getCachedConfig();
+  const { targetTool, requiredLevel, dangerous } = parseMcpInput(input, config.mcp);
+
+  const levelHint = dangerous ? "high (dangerous)" : requiredLevel;
 
   return {
     block: true,
     reason: `MCP tool "${targetTool}" blocked by permission (${state.currentLevel}). Allowed at this level: ${LEVEL_INFO[state.currentLevel].desc}
-User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
+User can re-run with: PI_PERMISSION_LEVEL=${levelHint} pi -p "..."`,
   };
 };
 
@@ -105,14 +110,28 @@ export const handleWriteToolCall = (
   const { state, toolName, filePath } = opts;
 
   if (state.currentLevel === "bypassed") return undefined;
-  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX["low"]) return undefined;
+
+  const config = getCachedConfig();
+  const classification = resolveToolLevel(toolName, config.tools);
+
+  // Fallback to default low for known tools, or block if unknown
+  if (!classification) {
+    return {
+      block: true,
+      reason: `Unknown tool "${toolName}" requires High permission`,
+    };
+  }
+
+  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
+    return undefined;
+  }
 
   const action = toolName === "write" ? "Write" : "Edit";
 
   return requestPermission({
     state,
-    message: `Requires Low: ${action} ${filePath}`,
-    requiredLevel: "low",
+    message: `Requires ${classification.level}: ${action} ${filePath}`,
+    requiredLevel: classification.level,
     envVarHint: 'pi -p "..."',
   });
 };

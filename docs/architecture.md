@@ -55,8 +55,7 @@ Functions used by both interactive and non-interactive handlers:
 
 - `commands.ts` — `handleConfigSubcommand()` (config show/reset/help)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
-- `tools.ts` — MCP tool detection and read-only tool check:
-  - `isKnownReadTool()` — Delegates to `resolveToolLevel()` from `tool-classifier.ts`
+- `tools.ts` — MCP tool detection:
   - `parseMcpInput()` — Parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
   - `McpToolInfo` / `McpToolInput` — Interfaces for MCP tool call input/output
 
