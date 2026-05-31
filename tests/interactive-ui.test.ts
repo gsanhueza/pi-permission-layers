@@ -3,7 +3,19 @@
  *
  * Run with: npm test
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+
+// Mock settings to avoid getAgentDir import chain
+const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
+const mockSettings = JSON.parse(
+  readFileSync(mockSettingsPath, "utf-8"),
+) as Record<string, unknown>;
+vi.mock("../src/core/settings", () => ({
+  loadPermissionConfig: () =>
+    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
+}));
 
 // Mock getCachedConfig before importing hasInteractiveUI
 const mockCachedConfig = vi.fn();

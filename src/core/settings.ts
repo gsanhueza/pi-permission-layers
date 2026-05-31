@@ -2,14 +2,14 @@
  * Settings persistence - load/save global permission level, mode, and config
  */
 
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import * as path from "node:path";
 import type { PermissionConfig } from "./interfaces";
 import { SettingsManager } from "./manager";
 import type { PermissionLevel, PermissionMode } from "./types";
 import { LEVELS, PERMISSION_MODES } from "./types";
 
-const getSettingsPath = () =>
-  path.join(process.env.HOME || "", ".pi", "agent", "settings.json");
+const getSettingsPath = () => path.join(getAgentDir(), "settings.json");
 const settingsManager = new SettingsManager(getSettingsPath());
 
 // ============================================================================
