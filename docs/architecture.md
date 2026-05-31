@@ -10,12 +10,15 @@ src/
 ├── shared/                 # Shared logic (single source of truth)
 │   ├── commands.ts         # handleConfigSubcommand (shared by UI & no-UI)
 │   ├── events.ts           # initializeSessionState
-│   └── tools.ts            # MCP constants, parseMcpInput, isKnownReadTool
+│   ├── mcp-input.ts        # parseMcpInput, McpToolInfo, McpToolInput
+│   ├── permission-check.ts # checkPermission — shared bypass + level comparison guard
+│   └── tool-permission.ts  # classifyAndCheck — shared decision tree for tool permission checks
 │
 ├── no-ui/                  # Non-interactive handlers (print mode, CI)
 │   ├── commands.ts         # handlePermissionCommand, handlePermissionModeCommand
 │   ├── events.ts           # handleSessionStart, handleToolCall
-│   └── handlers.ts         # handleDangerousCommand, requestPermission, handleBashToolCall, etc.
+│   ├── handlers.ts         # handleDangerousCommand, requestPermission, handleBashToolCall, etc.
+│   └── state.ts            # setLevel, setMode (session-only, no status bar)
 │
 ├── ui/                     # Interactive handlers (interactive mode)
 │   ├── commands.ts         # handlePermissionCommand, handlePermissionModeCommand
@@ -26,11 +29,15 @@ src/
 │   └── ui.ts               # hasInteractiveUI, notifySystem, isQuietMode, getStatusText, terminal detection
 │
 └── core/
-    ├── classifier.ts       # classifyCommand(), parseCommand(), dangerous command detection
+    ├── classifiers/
+    │   ├── shell-classifier.ts     # classifyCommand(), parseCommand(), dangerous command detection
+    │   ├── permission-resolver.ts  # Shared resolution algorithm (resolveLevel)
+    │   ├── tool-classifier.ts      # Tool permission classification (resolveToolLevel)
+    │   └── mcp-classifier.ts       # MCP permission classification (resolveMcpLevel)
     ├── constants.ts        # Shell trick patterns, redirection ops, command separators
     ├── manager.ts          # SettingsManager class (file I/O, atomic writes, validation)
     ├── settings.ts         # Global settings persistence (delegates to SettingsManager)
-    ├── tools.ts            # Config caching, glob→regex conversion, override checking, prefix mappings
+    ├── config.ts            # Config caching, glob→regex conversion, override checking, prefix mappings
     ├── interfaces.ts       # PermissionConfig, PermissionOverrides, PermissionPrefixMapping, ToolPermissionConfig, McpPermissionConfig, Classification, PermissionState, tool call options
     ├── types.ts            # PermissionLevel, PermissionMode, LEVELS, LEVEL_INFO, PERMISSION_MODES
     └── levels/
@@ -55,28 +62,31 @@ Functions used by both interactive and non-interactive handlers:
 
 - `commands.ts` — `handleConfigSubcommand()` (config show/reset/help)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
-- `tools.ts` — MCP tool detection:
+- `mcp-input.ts` — MCP input parsing:
   - `parseMcpInput()` — Parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
   - `McpToolInfo` / `McpToolInput` — Interfaces for MCP tool call input/output
+- `permission-check.ts` — `checkPermission()` — shared bypass + level comparison guard used by both UI and no-UI `requestPermission`
+- `tool-permission.ts` — `classifyAndCheck()` — shared decision tree (unknown → dangerous → level → allow) used by both UI and no-UI `checkToolPermission` wrappers
 
 ### `ui/` — Interactive Handlers
 
 Used when `hasInteractiveUI(ctx)` returns `true` (interactive mode):
 
-- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()`
+- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()`, `checkToolPermission()` (wraps `classifyAndCheck` from `shared/tool-permission.ts`)
 - `commands.ts` — `handlePermissionCommand()`, `handlePermissionModeCommand()` (with interactive select prompts for level/mode scope)
 - `events.ts` — `handleSessionStart()` (initializes state, sets status bar, shows notifications), `handleToolCall()` (dispatches to specific handlers)
 - `settings.ts` — `createSettingsList()` — renders an interactive TUI `SettingsList` for toggling `quietStartup`, `forceUI`, and `systemNotifications`
-- `state.ts` — `createInitialState()`, `setLevel()`, `setMode()`
+- `state.ts` — `createInitialState()`, `setLevel()`, `setMode()` (with global persistence and status bar update)
 - `ui.ts` — `hasInteractiveUI()` (detects interactive context), `notifySystem()` (desktop notifications — respects `systemNotifications` setting: `"off"`/`"on"`/`"unfocused"`/`"persistent"`), `isQuietMode()`, `getStatusText()`, terminal bundle ID detection (macOS: Ghostty, iTerm2, Kitty, Alacritty, Warp, Apple Terminal, VS Code), tmux awareness
 
 ### `no-ui/` — Non-Interactive Handlers
 
 Used when `hasInteractiveUI(ctx)` returns `false` (print mode, CI):
 
-- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()` — same signatures as `ui/` counterparts but always return block results with helpful error messages (no prompts)
+- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()`, `checkToolPermission()` (wraps `classifyAndCheck` from `shared/tool-permission.ts`) — same signatures as `ui/` counterparts but always return block results with helpful error messages (no prompts)
 - `commands.ts` — `handlePermissionCommand()`, `handlePermissionModeCommand()` — without interactive select prompts; setting a level always saves session-only (no global persistence)
 - `events.ts` — `handleSessionStart()` (calls `initializeSessionState` only, no notifications or status bar), `handleToolCall()` (dispatches to no-UI handlers)
+- `state.ts` — `setLevel()`, `setMode()` — simplified state mutation (always session-only, no ctx, no status bar update)
 
 ### `index.ts` — Entry Point
 
@@ -106,7 +116,7 @@ Registered events: `session_start`, `tool_call`
 
 The original monolithic `permission-core.ts` was refactored into focused modules:
 
-### `core/classifier.ts`
+### `core/classifiers/shell-classifier.ts`
 
 Pure functions for command classification:
 - `classifyCommand()` — Determines permission level for any shell command
@@ -124,6 +134,27 @@ Settings persistence — thin wrapper around `SettingsManager`:
 
 Atomic file writes and validation are handled by `SettingsManager` (see `core/manager.ts` below).
 
+### `classifiers/permission-resolver.ts`
+
+Shared resolution algorithm (delta/override model):
+- `resolveLevel(name, config, defaults)` — Resolves the effective permission level for any entry, checking user config then falling back to defaults
+- `CONFIG_LEVELS` — Ordering: `high → medium → low → minimal`
+
+Resolution order (most restrictive wins): dangerous → high → medium → low → minimal.
+
+### `classifiers/tool-classifier.ts`
+
+Tool permission classification:
+- `resolveToolLevel(toolName, userConfig)` — Resolves the effective permission level for a tool
+- `DEFAULT_TOOL_PERMISSIONS` — Built-in defaults: `read`/`ls`/`grep`/`find` → minimal, `write`/`edit` → low
+
+### `classifiers/mcp-classifier.ts`
+
+MCP permission classification:
+- `resolveMcpLevel(targetTool, mode, userConfig)` — Resolves the effective permission level for an MCP tool call, checking tool name first then mode
+- `DEFAULT_MCP_PERMISSIONS` — Modes (`search`, `describe`, `list`, `status`, `connect`) → minimal, known read-only MCP tools → low
+- `KNOWN_MCP_MODES` — Set of recognized MCP modes (`search`, `describe`, `list`, `status`, `connect`, `call`, `action`)
+
 ### `core/manager.ts`
 
 `SettingsManager` class — file I/O, atomic writes, and config validation:
@@ -131,10 +162,11 @@ Atomic file writes and validation are handled by `SettingsManager` (see `core/ma
 - `save(settings)` — Atomic write: writes to `.tmp` file, then renames
 - `validate(raw)` — Sanitizes `PermissionConfig`: strips invalid entries, caps overrides at 100 per level, tool/MCP entries at 100 per level, and prefix mappings at 50
 - `validateOverrides(raw)` — Filters patterns to valid non-empty strings per level
-- `validateToolMcpConfig(raw, fieldName)` — Filters tool/MCP entries to valid non-empty strings per level (100 cap)
+- `validateToolConfig(raw)` — Filters tool entries to valid non-empty strings per level (100 cap)
+- `validateMcpConfig(raw)` — Filters MCP entries to valid non-empty strings per level (100 cap)
 - `validatePrefixMappings(raw)` — Filters mappings to valid `{from, to}` objects
 
-### `core/tools.ts`
+### `core/config.ts`
 
 Configuration utilities:
 - `getCachedConfig()` — TTL-based cache (5 seconds) for permission config
@@ -186,7 +218,7 @@ Network/deployment/shell execution:
 - `kubectl`, `helm`, `terraform`, `pulumi`, `ansible`
 - `ssh`, `scp`, `rsync`
 
-### `classifier.ts` — Classification Pipeline
+### `classifiers/shell-classifier.ts` — Shell Classification Pipeline
 
 The classifier runs in this order:
 1. **Prefix normalization** — `fvm flutter build` → `flutter build`

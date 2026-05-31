@@ -20,7 +20,7 @@ A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permiss
 | Level | Description | Allowed Operations |
 |-------|-------------|-------------------|
 | `minimal` | Read-only (default) | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc. |
-| `low` | File operations | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools |
+| `low` | File threshold | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools |
 | `medium` | Development operations | Create/edit files (`mkdir`, `cp`, `mv`, `ln`), `npm install`, builds, tests, `git commit/pull`, linters, package managers |
 | `high` | Full operations | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.) |
 | `bypassed` | All checks disabled | Everything (dangerous — CI/containers only) |
@@ -181,6 +181,28 @@ Override priority (highest to lowest):
 
 > **Note on the `low` level:** `low` is not a standalone command classification level (there is no `isLowLevel()` classifier). Instead, it serves as a permission threshold used for output redirections, write/edit tool calls, known read-only MCP tools, and as an override target. Commands like `mkdir`, `cp`, `mv`, `ln`, and `touch` are classified as `medium`, not `low`.
 
+### Example: Full Config with Tools and MCP Overrides
+
+```json
+{
+  "permissionConfig": {
+    "overrides": {
+      "minimal": ["tmux list-*", "tmux show-*"],
+      "medium": ["tmux attach*", "tmux new*"]
+    },
+    "tools": {
+      "low": ["read"]  // move read up from minimal to low
+    },
+    "mcp": {
+      "medium": ["github_create_issue"]  // require medium for this tool
+    },
+    "prefixMappings": [
+      { "from": "fvm flutter", "to": "flutter" }
+    ]
+  }
+}
+```
+
 ### Tool Permission Config (`tools`)
 
 Assign permission levels to individual tool names. This uses a **delta/override model**: only specify what you want to change — unmentioned tools keep their default levels.
@@ -204,10 +226,20 @@ Assign permission levels to individual tool names. This uses a **delta/override 
 ### MCP Permission Config (`mcp`)
 
 Assign permission levels to MCP tools and modes. MCP config supports two types of entries:
-- **Mode names** (`search`, `describe`, `list`, `status`, `connect`) — match against the call's mode
+- **Mode names** (`search`, `describe`, `list`, `status`, `connect`, `call`, `action`) — match against the call's mode
 - **Tool names** (`serper_search`, `github_list_commits`) — match against the specific tool
 
 Tool name match takes precedence over mode match (more specific → more general).
+
+| Mode | Description |
+|------|-------------|
+| `search` | MCP search mode |
+| `describe` | MCP describe mode |
+| `list` | MCP list mode (server listing) |
+| `status` | MCP status mode |
+| `connect` | MCP connect mode |
+| `call` | MCP tool call mode (default when `tool` is specified) |
+| `action` | MCP action mode |
 
 | Level | Default entries | Description |
 |-------|-----------------|-------------|
@@ -264,7 +296,7 @@ npm run test
 
 ### Test Structure
 
-- **permission.test.ts** — Tests `classifyCommand()` directly
+- **shell-permission.test.ts** — Tests `classifyCommand()` directly
   - Covers all 5 permission levels
   - Tests command parsing, pipelines, redirections
   - Tests shell tricks (`$()`, backticks, `eval`)
@@ -276,6 +308,12 @@ npm run test
   - Tests block mode vs ask mode
 
 - **interactive-ui.test.ts** — Tests `hasInteractiveUI()`, `isQuietMode()`, `notifySystem()`, terminal detection, `systemNotifications` handling
+
+- **mcp-permission.test.ts** — Tests MCP tool permission classification
+
+- **tool-permission.test.ts** — Tests tool permission classification and the shared decision tree
+
+- **config-validation.test.ts** — Tests `SettingsManager` validation (overrides, tools, MCP, prefix mappings)
 
 > **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm run test` before committing.
 
