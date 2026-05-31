@@ -1,11 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {
+  McpPermissionConfig,
   PermissionConfig,
   PermissionOverrides,
   PermissionPrefixMapping,
   ToolPermissionConfig,
-  McpPermissionConfig,
 } from "./interfaces";
 import { Notification } from "./types";
 
@@ -48,8 +48,8 @@ export class SettingsManager {
 
     const overrides = this.validateOverrides(raw);
     const prefixMappings = this.validatePrefixMappings(raw);
-    const tools = this.validateToolMcpConfig(raw.tools, "tools");
-    const mcp = this.validateToolMcpConfig(raw.mcp, "mcp");
+    const tools = this.validateToolConfig(raw.tools);
+    const mcp = this.validateMcpConfig(raw.mcp);
     const quietStartup = this.validateQuietStartup(raw);
     const forceUI = this.validateForceUI(raw);
     const systemNotifications = this.validateSystemNotifications(raw);
@@ -95,13 +95,12 @@ export class SettingsManager {
     return response;
   }
 
-  private validateToolMcpConfig(
-    config: ToolPermissionConfig | McpPermissionConfig | undefined,
-    _fieldName: "tools" | "mcp",
-  ): ToolPermissionConfig | McpPermissionConfig | undefined {
+  private validateToolConfig(
+    config: ToolPermissionConfig | undefined,
+  ): ToolPermissionConfig | undefined {
     if (!config || typeof config !== "object") return undefined;
 
-    const response: ToolPermissionConfig | McpPermissionConfig = {};
+    const response: ToolPermissionConfig = {};
     const levels = ["minimal", "low", "medium", "high", "dangerous"] as const;
 
     for (const level of levels) {
@@ -118,9 +117,32 @@ export class SettingsManager {
     }
 
     const hasEntries = Object.keys(response).length > 0;
-    return hasEntries
-      ? (response as ToolPermissionConfig | McpPermissionConfig)
-      : undefined;
+    return hasEntries ? response : undefined;
+  }
+
+  private validateMcpConfig(
+    config: McpPermissionConfig | undefined,
+  ): McpPermissionConfig | undefined {
+    if (!config || typeof config !== "object") return undefined;
+
+    const response: McpPermissionConfig = {};
+    const levels = ["minimal", "low", "medium", "high", "dangerous"] as const;
+
+    for (const level of levels) {
+      const items = config[level];
+      if (Array.isArray(items)) {
+        const valid = items
+          .filter((p): p is string => typeof p === "string" && p.length > 0)
+          .slice(0, 100);
+
+        if (valid.length > 0) {
+          response[level] = valid;
+        }
+      }
+    }
+
+    const hasEntries = Object.keys(response).length > 0;
+    return hasEntries ? response : undefined;
   }
 
   private validatePrefixMappings(

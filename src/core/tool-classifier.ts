@@ -14,7 +14,6 @@ import type {
   McpPermissionConfig,
   ToolPermissionConfig,
 } from "./interfaces";
-import type { PermissionLevel } from "./types";
 
 // ============================================================================
 // DEFAULT PERMISSIONS
@@ -205,7 +204,11 @@ export const resolveMcpLevel = (
   userConfig: McpPermissionConfig | undefined,
 ): Classification | null => {
   // 1. Check user config for the specific tool name first (most specific match)
-  const toolNameResult = resolveLevel(targetTool, userConfig, DEFAULT_MCP_PERMISSIONS);
+  const toolNameResult = resolveLevel(
+    targetTool,
+    userConfig,
+    DEFAULT_MCP_PERMISSIONS,
+  );
   if (toolNameResult) {
     return toolNameResult;
   }

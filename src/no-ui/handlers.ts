@@ -4,10 +4,10 @@
 
 import { classifyCommand } from "../core/classifier";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
+import { resolveToolLevel } from "../core/tool-classifier";
+import { getCachedConfig } from "../core/tools";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
-import { getCachedConfig } from "../core/tools";
-import { resolveToolLevel } from "../core/tool-classifier";
 import type { McpToolInput } from "../shared/tools";
 import { parseMcpInput } from "../shared/tools";
 
@@ -89,7 +89,10 @@ export const handleMcpToolCall = (
   input: McpToolInput,
 ): { block: true; reason: string } => {
   const config = getCachedConfig();
-  const { targetTool, requiredLevel, dangerous } = parseMcpInput(input, config.mcp);
+  const { targetTool, requiredLevel, dangerous } = parseMcpInput(
+    input,
+    config.mcp,
+  );
 
   const levelHint = dangerous ? "high (dangerous)" : requiredLevel;
 

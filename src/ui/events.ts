@@ -1,3 +1,6 @@
+import { resolveToolLevel } from "../core/tool-classifier";
+import { getCachedConfig } from "../core/tools";
+import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {
   handleBashToolCall,
@@ -6,9 +9,6 @@ import {
   handleWriteToolCall,
   requestPermission,
 } from "../ui/handlers";
-import { getCachedConfig } from "../core/tools";
-import { resolveToolLevel } from "../core/tool-classifier";
-import { LEVEL_INDEX } from "../core/types";
 import { getStatusText, isQuietMode } from "./ui";
 
 import {

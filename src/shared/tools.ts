@@ -3,8 +3,8 @@
  */
 
 import type { McpPermissionConfig } from "../core/interfaces";
-import type { PermissionLevel } from "../core/types";
 import { resolveMcpLevel } from "../core/tool-classifier";
+import type { PermissionLevel } from "../core/types";
 
 // ============================================================================
 // MCP TOOL INFO

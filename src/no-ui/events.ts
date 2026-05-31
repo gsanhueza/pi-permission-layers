@@ -4,6 +4,9 @@
 
 import { ToolCallEvent } from "@earendil-works/pi-coding-agent";
 import type { PermissionState } from "../core/interfaces";
+import { resolveToolLevel } from "../core/tool-classifier";
+import { getCachedConfig } from "../core/tools";
+import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {
   handleBashToolCall,
@@ -11,9 +14,6 @@ import {
   handleWriteToolCall,
   requestPermission,
 } from "./handlers";
-import { getCachedConfig } from "../core/tools";
-import { resolveToolLevel } from "../core/tool-classifier";
-import { LEVEL_INDEX } from "../core/types";
 
 // ============================================================================
 // SESSION START
