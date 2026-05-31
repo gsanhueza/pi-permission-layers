@@ -57,7 +57,7 @@ export class SettingsManager {
     // Only return what we know is not default
     const response: PermissionConfig = {};
 
-    if (Object.keys(overrides).length > 0) response.overrides = overrides;
+    if (overrides) response.overrides = overrides;
     if (prefixMappings.length > 0) response.prefixMappings = prefixMappings;
     if (tools) response.tools = tools;
     if (mcp) response.mcp = mcp;
@@ -69,11 +69,11 @@ export class SettingsManager {
     return response;
   }
 
-  private validateOverrides(raw: PermissionConfig): PermissionOverrides {
+  private validateOverrides(raw: PermissionConfig): PermissionOverrides | undefined {
     const overrides = raw.overrides;
 
     if (!(overrides && typeof overrides === "object")) {
-      return {};
+      return undefined;
     }
 
     const response: PermissionOverrides = {};
@@ -92,7 +92,8 @@ export class SettingsManager {
       }
     }
 
-    return response;
+    const hasEntries = Object.keys(response).length > 0;
+    return hasEntries ? response : undefined;
   }
 
   private validateToolConfig(
