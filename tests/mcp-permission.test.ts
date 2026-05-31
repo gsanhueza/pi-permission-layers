@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { resolveMcpLevel } from "../src/core/tool-classifier";
+import { resolveMcpLevel } from "../src/core/classifiers/mcp-classifier";
 import type { McpPermissionConfig } from "../src/core/interfaces";
 
 // ============================================================================
@@ -45,7 +45,9 @@ describe("resolveMcpLevel: mode-based resolution", () => {
       level: "low",
       dangerous: false,
     });
-    expect(resolveMcpLevel("atlassian_getJiraIssue", "call", undefined)).toEqual({
+    expect(
+      resolveMcpLevel("atlassian_getJiraIssue", "call", undefined),
+    ).toEqual({
       level: "low",
       dangerous: false,
     });

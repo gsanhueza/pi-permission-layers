@@ -3,8 +3,8 @@
  */
 
 import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { invalidateConfigCache } from "../core/config";
 import { loadPermissionConfig, savePermissionConfig } from "../core/settings";
-import { invalidateConfigCache } from "../core/tools";
 
 export const handleConfigSubcommand = async (
   args: string,

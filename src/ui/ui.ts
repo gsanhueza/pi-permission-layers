@@ -1,6 +1,6 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { execFile } from "node:child_process";
-import { getCachedConfig } from "../core/tools";
+import { getCachedConfig } from "../core/config";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INFO } from "../core/types";
 

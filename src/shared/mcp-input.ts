@@ -2,8 +2,8 @@
  * Shared tool detection logic used by both UI and no-UI handlers.
  */
 
+import { resolveMcpLevel } from "../core/classifiers/mcp-classifier";
 import type { McpPermissionConfig } from "../core/interfaces";
-import { resolveMcpLevel } from "../core/tool-classifier";
 import type { PermissionLevel } from "../core/types";
 
 // ============================================================================

@@ -4,8 +4,8 @@
 
 import { getSettingsListTheme } from "@earendil-works/pi-coding-agent";
 import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
+import { invalidateConfigCache } from "../core/config";
 import { loadPermissionConfig, savePermissionConfig } from "../core/settings";
-import { invalidateConfigCache } from "../core/tools";
 import { Notification } from "../core/types";
 
 export const createSettingsList = (done: () => void): SettingsList => {

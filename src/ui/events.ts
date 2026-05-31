@@ -1,5 +1,5 @@
-import { resolveToolLevel } from "../core/tool-classifier";
-import { getCachedConfig } from "../core/tools";
+import { resolveToolLevel } from "../core/classifiers/tool-classifier";
+import { getCachedConfig } from "../core/config";
 import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {

@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { resolveToolLevel } from "../src/core/tool-classifier";
+import { resolveToolLevel } from "../src/core/classifiers/tool-classifier";
 import type { ToolPermissionConfig } from "../src/core/interfaces";
 
 // ============================================================================

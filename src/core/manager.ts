@@ -69,7 +69,9 @@ export class SettingsManager {
     return response;
   }
 
-  private validateOverrides(raw: PermissionConfig): PermissionOverrides | undefined {
+  private validateOverrides(
+    raw: PermissionConfig,
+  ): PermissionOverrides | undefined {
     const overrides = raw.overrides;
 
     if (!(overrides && typeof overrides === "object")) {

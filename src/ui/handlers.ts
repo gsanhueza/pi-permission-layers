@@ -3,14 +3,14 @@
  */
 
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { classifyCommand } from "../core/classifier";
+import { classifyCommand } from "../core/classifiers/shell-classifier";
+import { resolveToolLevel } from "../core/classifiers/tool-classifier";
+import { getCachedConfig } from "../core/config";
 import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
-import { resolveToolLevel } from "../core/tool-classifier";
-import { getCachedConfig } from "../core/tools";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
-import type { McpToolInput } from "../shared/tools";
-import { parseMcpInput } from "../shared/tools";
+import type { McpToolInput } from "../shared/mcp-input";
+import { parseMcpInput } from "../shared/mcp-input";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
 

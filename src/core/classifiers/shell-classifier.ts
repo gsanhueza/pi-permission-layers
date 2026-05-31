@@ -1,8 +1,13 @@
 /**
- * Command classification - parsing, level detection, dangerous command detection
+ * Shell command classification - parsing, level detection, dangerous command detection
  */
 
 import { parse } from "shell-quote";
+import {
+  applyPrefixMappings,
+  checkOverrides,
+  getCachedConfig,
+} from "../config";
 import {
   ALL_REDIRECTION_OPS,
   COMMAND_SEPARATORS,
@@ -10,17 +15,16 @@ import {
   SAFE_REDIRECTION_TARGETS,
   SHELL_EXECUTION_COMMANDS,
   SHELL_TRICK_PATTERNS,
-} from "./constants";
-import type { Classification, PermissionConfig } from "./interfaces";
+} from "../constants";
+import type { Classification, PermissionConfig } from "../interfaces";
 import {
   getCommandName,
   isHighLevel,
   isMediumLevel,
   isMinimalLevel,
-} from "./levels/index";
-import { applyPrefixMappings, checkOverrides, getCachedConfig } from "./tools";
-import type { PermissionLevel } from "./types";
-import { LEVEL_INDEX } from "./types";
+} from "../levels/index";
+import type { PermissionLevel } from "../types";
+import { LEVEL_INDEX } from "../types";
 
 // ============================================================================
 // COMMAND PARSING

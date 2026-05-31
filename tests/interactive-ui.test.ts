@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock getCachedConfig before importing hasInteractiveUI
 const mockCachedConfig = vi.fn();
-vi.mock("../src/core/tools", async () => {
-  const actual = await vi.importActual("../src/core/tools");
+vi.mock("../src/core/config", async () => {
+  const actual = await vi.importActual("../src/core/config");
   return {
     ...actual,
     getCachedConfig: (...args: unknown[]) => mockCachedConfig(...args),

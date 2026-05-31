@@ -3,9 +3,9 @@
  */
 
 import { ToolCallEvent } from "@earendil-works/pi-coding-agent";
+import { resolveToolLevel } from "../core/classifiers/tool-classifier";
+import { getCachedConfig } from "../core/config";
 import type { PermissionState } from "../core/interfaces";
-import { resolveToolLevel } from "../core/tool-classifier";
-import { getCachedConfig } from "../core/tools";
 import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {

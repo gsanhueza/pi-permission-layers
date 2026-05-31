@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { classifyCommand } from "../src/core/classifier";
+import { classifyCommand } from "../src/core/classifiers/shell-classifier";
 import { type PermissionConfig } from "../src/core/interfaces";
 
 // ============================================================================
