@@ -1,14 +1,14 @@
 /**
  * Tests for permission prompt UI behavior
  *
- * Covers handleBashToolCall_UI, handleMcpToolCall_UI,
- * handleWriteToolCall_UI, and the requestPermission helper (tested indirectly).
+ * Covers UIPermissionStrategy and NoUIPermissionStrategy tool call
+ * handlers, and the request permission flow (tested indirectly).
  *
  * Run with: npm test
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 // Mock settings module to avoid reading from real ~/.pi/agent/settings.json
 const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
@@ -19,17 +19,29 @@ const mockSettings = JSON.parse(
 vi.mock("../src/core/settings", () => ({
   loadPermissionConfig: () =>
     (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
+  loadGlobalPermissionLevel: () => null,
+  loadGlobalPermissionMode: () => null,
+  saveGlobalPermissionLevel: () => {},
+  saveGlobalPermissionMode: () => {},
 }));
 
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import type { PermissionState } from "../src/core/interfaces";
-import { handleBashToolCall as handleBashToolCall_noUI } from "../src/no-ui/handlers";
-import {
-  handleBashToolCall as handleBashToolCall_UI,
-  handleMcpToolCall as handleMcpToolCall_UI,
-  handleWriteToolCall as handleWriteToolCall_UI,
-} from "../src/ui/handlers";
-import { createInitialState } from "../src/ui/state";
+// Mock the pi-coding-agent package to avoid the broken @mariozechner/pi-ai dependency.
+// All exports from that package are type-only, so providing empty objects is sufficient.
+vi.mock("@earendil-works/pi-coding-agent", () => ({
+  ExtensionContext: {},
+  ExtensionCommandContext: {},
+  ToolCallEvent: {},
+}));
+
+import { NoUIPermissionStrategy } from "../src/strategies/no-ui-strategy";
+import { UIPermissionStrategy } from "../src/strategies/ui-strategy";
+
+// ============================================================================
+// Strategy instances (shared across tests)
+// ============================================================================
+
+const uiStrategy = new UIPermissionStrategy();
+const noUIStrategy = new NoUIPermissionStrategy();
 
 // ============================================================================
 // Mock context factory
@@ -75,17 +87,13 @@ const makeCtx = (selectResponse: string | null = "Cancel"): MockCtx => {
   };
 };
 
-/** State at minimal level (default) */
-const minimalState = (): PermissionState => {
-  return createInitialState(); // defaults to minimal
-};
-
-/** State at a specific level */
-const stateAt = (level: PermissionState["currentLevel"]): PermissionState => {
-  const s = createInitialState();
-  s.currentLevel = level;
-  return s;
-};
+// Reset strategy state before each test so tests don't leak into each other
+beforeEach(() => {
+  uiStrategy.state.currentLevel = "minimal";
+  uiStrategy.state.isSessionOnly = false;
+  uiStrategy.state.permissionMode = "ask";
+  uiStrategy.state.isModeSessionOnly = false;
+});
 
 // ============================================================================
 // handleBashToolCall - command displayed in prompt
@@ -93,13 +101,11 @@ const stateAt = (level: PermissionState["currentLevel"]): PermissionState => {
 
 describe("bash prompt: command shown with $ prefix in message", () => {
   test("command shown with $ prefix", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
+    await uiStrategy.handleBashToolCall(
       "git push origin main",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -110,14 +116,9 @@ describe("bash prompt: command shown with $ prefix in message", () => {
 
 describe("bash prompt: full command shown in message", () => {
   test("full command shown", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
-      "npm install",
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall("npm install", ctx as unknown as never);
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
@@ -127,15 +128,10 @@ describe("bash prompt: full command shown in message", () => {
 
 describe("bash prompt: long command shown in full", () => {
   test("long command not truncated", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
     const longCmd = "git commit -m '" + "x".repeat(80) + "'";
-    await handleBashToolCall_UI(
-      state,
-      longCmd,
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall(longCmd, ctx as unknown as never);
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
@@ -146,13 +142,11 @@ describe("bash prompt: long command shown in full", () => {
 
 describe("bash prompt: required level shown in message", () => {
   test("high level shown", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
+    await uiStrategy.handleBashToolCall(
       "git push origin main",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -161,14 +155,9 @@ describe("bash prompt: required level shown in message", () => {
   });
 
   test("medium level shown", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
-      "npm install",
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall("npm install", ctx as unknown as never);
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
@@ -182,14 +171,9 @@ describe("bash prompt: required level shown in message", () => {
 
 describe("bash prompt: options include Allow once, Allow all, Cancel", () => {
   test("options include correct choices", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
-      "git push",
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall("git push", ctx as unknown as never);
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { options } = ctx.selectCalls[0];
@@ -201,14 +185,9 @@ describe("bash prompt: options include Allow once, Allow all, Cancel", () => {
 
 describe("bash prompt: Allow all option includes level and (session)", () => {
   test("high level Allow all", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
-      "git push",
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall("git push", ctx as unknown as never);
 
     const { options } = ctx.selectCalls[0];
     const allowAll = options.find((o) => o.startsWith("Allow all"));
@@ -216,14 +195,9 @@ describe("bash prompt: Allow all option includes level and (session)", () => {
   });
 
   test("medium level Allow all", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
-      "npm install",
-      ctx as unknown as ExtensionContext,
-    );
+    await uiStrategy.handleBashToolCall("npm install", ctx as unknown as never);
 
     const { options } = ctx.selectCalls[0];
     const allowAll = options.find((o) => o.startsWith("Allow all"));
@@ -237,13 +211,11 @@ describe("bash prompt: Allow all option includes level and (session)", () => {
 
 describe("bash: Allow once returns undefined (allows command)", () => {
   test("Allow once", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Allow once");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "git push",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
   });
@@ -251,13 +223,11 @@ describe("bash: Allow once returns undefined (allows command)", () => {
 
 describe("bash: Cancel returns block result", () => {
   test("Cancel", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "git push",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeDefined();
     expect(result!.block).toBe(true);
@@ -267,42 +237,37 @@ describe("bash: Cancel returns block result", () => {
 
 describe("bash: Allow all upgrades state level for session", () => {
   test("Allow all High", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Allow all High (session)");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "git push",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
-    expect(state.currentLevel).toBe("high");
-    expect(state.isSessionOnly).toBe(true);
+    expect(uiStrategy.state.currentLevel).toBe("high");
+    expect(uiStrategy.state.isSessionOnly).toBe(true);
   });
 
   test("Allow all Medium", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Allow all Medium (session)");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "npm install",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
-    expect(state.currentLevel).toBe("medium");
+    expect(uiStrategy.state.currentLevel).toBe("medium");
   });
 });
 
 describe("bash: sufficient permission - no prompt shown", () => {
   test("no prompt when permission sufficient", async () => {
-    const state = stateAt("high");
+    uiStrategy.state.currentLevel = "high";
     const ctx = makeCtx("Cancel");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "git push",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
     expect(ctx.selectCalls.length).toBe(0);
@@ -311,13 +276,11 @@ describe("bash: sufficient permission - no prompt shown", () => {
 
 describe("bash: minimal commands always pass through without prompt", () => {
   test("minimal commands pass", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "ls -la",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
     expect(ctx.selectCalls.length).toBe(0);
@@ -326,13 +289,12 @@ describe("bash: minimal commands always pass through without prompt", () => {
 
 describe("bash: bypassed level skips all checks", () => {
   test("bypassed level", async () => {
-    const state = stateAt("bypassed");
+    uiStrategy.state.currentLevel = "bypassed";
     const ctx = makeCtx("Cancel");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "sudo rm -rf /",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
     expect(ctx.selectCalls.length).toBe(0);
@@ -345,13 +307,11 @@ describe("bash: bypassed level skips all checks", () => {
 
 describe("dangerous: select title shows command with $ prefix", () => {
   test("dangerous command title", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
+    await uiStrategy.handleBashToolCall(
       "rm -rf /tmp/test",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -363,13 +323,11 @@ describe("dangerous: select title shows command with $ prefix", () => {
 
 describe("dangerous: options are Allow once and Cancel only", () => {
   test("dangerous options", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleBashToolCall_UI(
-      state,
+    await uiStrategy.handleBashToolCall(
       "sudo apt-get install pkg",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -383,13 +341,11 @@ describe("dangerous: options are Allow once and Cancel only", () => {
 
 describe("dangerous: Allow once permits command", () => {
   test("dangerous Allow once", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Allow once");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "rm -rf /tmp/test",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeUndefined();
   });
@@ -397,13 +353,11 @@ describe("dangerous: Allow once permits command", () => {
 
 describe("dangerous: Cancel blocks command", () => {
   test("dangerous Cancel", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "rm -rf /tmp/test",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
     expect(result).toBeDefined();
     expect(result!.block).toBe(true);
@@ -412,14 +366,12 @@ describe("dangerous: Cancel blocks command", () => {
 
 describe("dangerous: long dangerous command shown in full", () => {
   test("long dangerous command not truncated", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
     const longDangerousCmd = "sudo rm -rf /tmp/" + "a".repeat(100);
-    await handleBashToolCall_UI(
-      state,
+    await uiStrategy.handleBashToolCall(
       longDangerousCmd,
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     const { message } = ctx.selectCalls[0];
@@ -434,15 +386,13 @@ describe("dangerous: long dangerous command shown in full", () => {
 
 describe("write: prompts at minimal level", () => {
   test("write minimal", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeDefined();
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -451,15 +401,14 @@ describe("write: prompts at minimal level", () => {
 
 describe("write: no prompt at low or above", () => {
   test("write low", async () => {
-    const state = stateAt("low");
+    uiStrategy.state.currentLevel = "low";
     const ctx = makeCtx("Cancel");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeUndefined();
     expect(ctx.selectCalls.length).toBe(0);
@@ -468,15 +417,13 @@ describe("write: no prompt at low or above", () => {
 
 describe("write: prompt title includes file path", () => {
   test("write file path in message", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/src/index.ts",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    await uiStrategy.handleWriteToolCall(
+      "write",
+      "/src/index.ts",
+      ctx as unknown as never,
+    );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
     const { message } = ctx.selectCalls[0];
@@ -486,18 +433,16 @@ describe("write: prompt title includes file path", () => {
 
 describe("write: Allow all upgrades state to low", () => {
   test("write Allow all", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Allow all Low (session)");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeUndefined();
-    expect(state.currentLevel).toBe("low");
+    expect(uiStrategy.state.currentLevel).toBe("low");
   });
 });
 
@@ -507,13 +452,11 @@ describe("write: Allow all upgrades state to low", () => {
 
 describe("mcp: prompts at minimal level with tool name", () => {
   test("mcp minimal", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleMcpToolCall_UI(
-      state,
+    await uiStrategy.handleMcpToolCall(
       { tool: "filesystem_read" },
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -524,13 +467,12 @@ describe("mcp: prompts at minimal level with tool name", () => {
 
 describe("mcp: no prompt at medium or above", () => {
   test("mcp medium", async () => {
-    const state = stateAt("medium");
+    uiStrategy.state.currentLevel = "medium";
     const ctx = makeCtx("Cancel");
 
-    await handleMcpToolCall_UI(
-      state,
+    await uiStrategy.handleMcpToolCall(
       { tool: "some_tool" },
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBe(0);
@@ -542,13 +484,11 @@ describe("mcp: no prompt at medium or above", () => {
 
 describe("mcp: unknown args still show a prompt", () => {
   test("mcp unknown args", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    await handleMcpToolCall_UI(
-      state,
+    await uiStrategy.handleMcpToolCall(
       { action: "unknown_action" },
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
@@ -561,14 +501,12 @@ describe("mcp: unknown args still show a prompt", () => {
 
 describe("block mode: blocks without prompting", () => {
   test("block mode", async () => {
-    const state = minimalState();
-    state.permissionMode = "block";
+    uiStrategy.state.permissionMode = "block";
     const ctx = makeCtx("Allow once");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "git push",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(result).toBeDefined();
@@ -578,14 +516,12 @@ describe("block mode: blocks without prompting", () => {
   });
 
   test("block mode dangerous", async () => {
-    const state = minimalState();
-    state.permissionMode = "block";
+    uiStrategy.state.permissionMode = "block";
     const ctx = makeCtx("Allow once");
 
-    const result = await handleBashToolCall_UI(
-      state,
+    const result = await uiStrategy.handleBashToolCall(
       "rm -rf /tmp",
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(result).toBeDefined();
@@ -599,9 +535,12 @@ describe("block mode: blocks without prompting", () => {
 
 describe("no UI: blocks without prompting", () => {
   test("no UI", async () => {
-    const state = minimalState();
+    const ctx = makeCtx("Cancel");
 
-    const result = handleBashToolCall_noUI(state, "git push");
+    const result = await noUIStrategy.handleBashToolCall(
+      "git push",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeDefined();
     expect(result!.block).toBe(true);
@@ -614,45 +553,40 @@ describe("no UI: blocks without prompting", () => {
 
 describe("tool: write/edit prompts at minimal level", () => {
   test("write prompts at minimal", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeDefined();
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
   });
 
   test("edit prompts at minimal", async () => {
-    const state = minimalState();
     const ctx = makeCtx("Cancel");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "edit",
-      filePath: "/src/index.ts",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "edit",
+      "/src/index.ts",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeDefined();
     expect(ctx.selectCalls.length).toBeGreaterThan(0);
   });
 
   test("write no prompt at low", async () => {
-    const state = stateAt("low");
+    uiStrategy.state.currentLevel = "low";
     const ctx = makeCtx("Cancel");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeUndefined();
     expect(ctx.selectCalls.length).toBe(0);
@@ -664,7 +598,7 @@ describe("tool: write/edit prompts at minimal level", () => {
 // ============================================================================
 
 // Note: Dangerous MCP tool behavior is tested in tool-mcp-permission.test.ts
-// The handler correctly routes dangerous MCP calls to handleDangerousCommand,
+// The handler correctly routes dangerous MCP calls to onDangerous,
 // which always prompts regardless of current level.
 
 // ============================================================================
@@ -673,16 +607,14 @@ describe("tool: write/edit prompts at minimal level", () => {
 
 describe("block mode: tool calls blocked", () => {
   test("write blocked in block mode", async () => {
-    const state = minimalState();
-    state.permissionMode = "block";
+    uiStrategy.state.permissionMode = "block";
     const ctx = makeCtx("Allow once");
 
-    const result = await handleWriteToolCall_UI({
-      state,
-      toolName: "write",
-      filePath: "/tmp/file.txt",
-      ctx: ctx as unknown as ExtensionContext,
-    });
+    const result = await uiStrategy.handleWriteToolCall(
+      "write",
+      "/tmp/file.txt",
+      ctx as unknown as never,
+    );
 
     expect(result).toBeDefined();
     expect(result!.block).toBe(true);
@@ -693,14 +625,12 @@ describe("block mode: tool calls blocked", () => {
 
 describe("block mode: MCP calls blocked", () => {
   test("mcp blocked in block mode", async () => {
-    const state = minimalState();
-    state.permissionMode = "block";
+    uiStrategy.state.permissionMode = "block";
     const ctx = makeCtx("Allow once");
 
-    const result = await handleMcpToolCall_UI(
-      state,
+    const result = await uiStrategy.handleMcpToolCall(
       { tool: "some_tool" },
-      ctx as unknown as ExtensionContext,
+      ctx as unknown as never,
     );
 
     expect(result).toBeDefined();
