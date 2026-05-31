@@ -11,6 +11,7 @@ import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import type { McpToolInput } from "../shared/mcp-input";
 import { parseMcpInput } from "../shared/mcp-input";
+import { checkPermission } from "../shared/permission-check";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
 
@@ -71,12 +72,7 @@ export const requestPermission = async (
 > => {
   const { state, message, requiredLevel, details, notifyTitle, ctx } = opts;
 
-  if (state.currentLevel === "bypassed") return undefined;
-
-  const requiredIndex = LEVEL_INDEX[requiredLevel];
-  const currentIndex = LEVEL_INDEX[state.currentLevel];
-
-  if (currentIndex >= requiredIndex) return undefined;
+  if (checkPermission(state, requiredLevel)) return undefined;
 
   const requiredInfo = LEVEL_INFO[requiredLevel];
   const currentInfo = LEVEL_INFO[state.currentLevel];

@@ -10,6 +10,7 @@ import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import type { McpToolInput } from "../shared/mcp-input";
 import { parseMcpInput } from "../shared/mcp-input";
+import { checkPermission } from "../shared/permission-check";
 
 // ============================================================================
 // DANGEROUS COMMAND HANDLER
@@ -41,12 +42,7 @@ export const requestPermission = (
 ): { block: true; reason: string } | undefined => {
   const { state, message, requiredLevel, envVarHint } = opts;
 
-  if (state.currentLevel === "bypassed") return undefined;
-
-  const requiredIndex = LEVEL_INDEX[requiredLevel];
-  const currentIndex = LEVEL_INDEX[state.currentLevel];
-
-  if (currentIndex >= requiredIndex) return undefined;
+  if (checkPermission(state, requiredLevel)) return undefined;
 
   return {
     block: true,

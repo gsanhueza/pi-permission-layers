@@ -12,7 +12,7 @@ import {
   PERMISSION_MODE_INFO,
 } from "../core/types";
 import { handleConfigSubcommand } from "../shared/commands";
-import { setLevel, setMode } from "../ui/state";
+import { setLevel, setMode } from "./state";
 
 // ============================================================================
 // /permission COMMAND
@@ -33,7 +33,7 @@ export const handlePermissionCommand = async (
 
   if (arg && LEVELS.includes(arg as PermissionLevel)) {
     const newLevel = arg as PermissionLevel;
-    setLevel(state, newLevel, false, ctx);
+    setLevel(state, newLevel);
     ctx.ui.notify(`Permission: ${LEVEL_INFO[newLevel].label}`, "info");
     return;
   }
@@ -57,7 +57,7 @@ export const handlePermissionModeCommand = async (
 
   if (arg && PERMISSION_MODES.includes(arg as PermissionMode)) {
     const newMode = arg as PermissionMode;
-    setMode(state, newMode, false);
+    setMode(state, newMode);
     ctx.ui.notify(
       `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}`,
       "info",
