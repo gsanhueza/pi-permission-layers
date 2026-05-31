@@ -6,14 +6,12 @@ import { ToolCallEvent } from "@earendil-works/pi-coding-agent";
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
 import { getCachedConfig } from "../core/config";
 import type { PermissionState } from "../core/interfaces";
-import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {
+  checkToolPermission,
   handleBashToolCall,
-  handleDangerousCommand,
   handleMcpToolCall,
   handleWriteToolCall,
-  requestPermission,
 } from "./handlers";
 
 // ============================================================================
@@ -55,25 +53,10 @@ export const handleToolCall = async (
   const config = getCachedConfig();
   const classification = resolveToolLevel(event.toolName, config.tools);
 
-  if (classification === null) {
-    return {
-      block: true,
-      reason: `⚠️ Unknown tool "${event.toolName}" requires High permission`,
-    };
-  }
-
-  if (classification.dangerous) {
-    return handleDangerousCommand(event.toolName);
-  }
-
-  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
-    return undefined;
-  }
-
-  return requestPermission({
+  return checkToolPermission(
     state,
-    message: `Tool: ${event.toolName}`,
-    requiredLevel: classification.level,
-    envVarHint: 'pi -p "..."',
-  });
+    classification,
+    event.toolName,
+    () => `Tool: ${event.toolName}`,
+  );
 };

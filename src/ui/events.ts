@@ -1,13 +1,10 @@
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
 import { getCachedConfig } from "../core/config";
-import { LEVEL_INDEX } from "../core/types";
 import { initializeSessionState } from "../shared/events";
 import {
   handleBashToolCall,
-  handleDangerousCommand,
   handleMcpToolCall,
   handleWriteToolCall,
-  requestPermission,
 } from "../ui/handlers";
 import { getStatusText, isQuietMode } from "./ui";
 
@@ -16,6 +13,7 @@ import {
   ToolCallEvent,
 } from "@earendil-works/pi-coding-agent";
 import { PermissionState } from "../core/interfaces";
+import { checkToolPermission } from "../ui/handlers";
 
 // ============================================================================
 // SESSION START
@@ -79,25 +77,11 @@ export const handleToolCall = async (
   const config = getCachedConfig();
   const classification = resolveToolLevel(event.toolName, config.tools);
 
-  if (classification === null) {
-    return {
-      block: true,
-      reason: `⚠️ Unknown tool "${event.toolName}" requires High permission`,
-    };
-  }
-
-  if (classification.dangerous) {
-    return handleDangerousCommand(event.toolName, state, ctx);
-  }
-
-  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
-    return undefined;
-  }
-
-  return requestPermission({
+  return checkToolPermission({
     state,
-    message: `Tool: ${event.toolName}`,
-    requiredLevel: classification.level,
+    classification,
+    toolName: event.toolName,
+    messageBuilder: () => `Tool: ${event.toolName}`,
     details: `Tool call: ${event.toolName}`,
     notifyTitle: "Permission Required",
     ctx,

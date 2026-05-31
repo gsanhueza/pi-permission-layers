@@ -6,12 +6,17 @@ import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { classifyCommand } from "../core/classifiers/shell-classifier";
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
 import { getCachedConfig } from "../core/config";
-import type { PermissionState, WriteToolCallOptions } from "../core/interfaces";
+import type {
+  Classification,
+  PermissionState,
+  WriteToolCallOptions,
+} from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
 import type { McpToolInput } from "../shared/mcp-input";
 import { parseMcpInput } from "../shared/mcp-input";
 import { checkPermission } from "../shared/permission-check";
+import { classifyAndCheck } from "../shared/tool-permission";
 import { setLevel } from "./state";
 import { notifySystem } from "./ui";
 
@@ -116,6 +121,59 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 };
 
 // ============================================================================
+// TOOL PERMISSION CHECKER (ui)
+// ============================================================================
+
+interface CheckToolPermissionOpts {
+  state: PermissionState;
+  classification: Classification | null;
+  toolName: string;
+  messageBuilder: (c: Classification) => string;
+  details: string;
+  notifyTitle: string;
+  ctx: ExtensionContext;
+}
+
+/**
+ * Check tool permission using the shared decision tree, then request
+ * permission with ui-specific formatting.
+ */
+export const checkToolPermission = async (
+  opts: CheckToolPermissionOpts,
+): Promise<{ block: true; reason: string } | undefined> => {
+  const {
+    state,
+    classification,
+    toolName,
+    messageBuilder,
+    details,
+    notifyTitle,
+    ctx,
+  } = opts;
+
+  const result = classifyAndCheck(state, classification);
+
+  if (result.blocked) {
+    if (result.reason === "dangerous") {
+      return handleDangerousCommand(toolName, state, ctx);
+    }
+    return {
+      block: true,
+      reason: `[pi-permission-layers] Unknown tool "${toolName}" requires High permission`,
+    };
+  }
+
+  return requestPermission({
+    state,
+    message: messageBuilder(result.classification!),
+    requiredLevel: result.classification!.level,
+    details,
+    notifyTitle,
+    ctx,
+  });
+};
+
+// ============================================================================
 // BASH TOOL HANDLER
 // ============================================================================
 
@@ -191,30 +249,14 @@ export const handleWriteToolCall = async (
   const config = getCachedConfig();
   const classification = resolveToolLevel(toolName, config.tools);
 
-  // Fallback to default low for known tools, or block if unknown
-  if (!classification) {
-    return {
-      block: true,
-      reason: `Unknown tool "${toolName}" requires High permission`,
-    };
-  }
-
-  // Dangerous tools always require confirmation
-  if (classification.dangerous) {
-    return handleDangerousCommand(`${toolName}: ${filePath}`, state, ctx);
-  }
-
-  if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[classification.level]) {
-    return undefined;
-  }
-
   const action = toolName === "write" ? "Write" : "Edit";
 
-  return requestPermission({
+  return checkToolPermission({
     state,
-    message: `${action} ${filePath}`,
-    requiredLevel: classification.level,
-    details: `${action}`,
+    classification,
+    toolName: `${toolName}: ${filePath}`,
+    messageBuilder: (c) => `${action} ${filePath}`,
+    details: action,
     notifyTitle: "Permission Required",
     ctx,
   });
