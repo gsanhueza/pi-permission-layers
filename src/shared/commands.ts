@@ -61,13 +61,24 @@ Edit ~/.pi/agent/settings.json directly for full control:
   "permissionConfig": {
     "overrides": {
       "minimal": ["tmux list-*", "tmux show-*"],
-      "medium": ["tmux *", "screen *"],
+      "medium": ["tmux attach*", "tmux new*"],
       "high": ["rm -rf *"],
       "dangerous": ["dd if=* of=/dev/*"]
     },
+    "tools": {
+      "minimal": ["read", "ls", "grep", "find"],
+      "low": ["write", "edit"]
+    },
+    "mcp": {
+      "minimal": ["search", "describe", "list", "status", "connect"],
+      "low": ["serper_search", "serper_scrape", "github_list_commits"],
+      "medium": ["github_create_issue"]
+    },
     "prefixMappings": [
       { "from": "fvm flutter", "to": "flutter" },
-      { "from": "nvm exec", "to": "" }
+      { "from": "nvm exec", "to": "" },
+      { "from": "rbenv exec", "to": "" },
+      { "from": "pyenv exec", "to": "" }
     ],
     "quietStartup": true,
     "forceUI": true,
