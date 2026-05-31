@@ -56,11 +56,9 @@ Functions used by both interactive and non-interactive handlers:
 - `commands.ts` — `handleConfigSubcommand()` (config show/reset/help)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
 - `tools.ts` — MCP tool detection and read-only tool check:
-  - `isKnownReadTool()` — Checks if a tool name is in the read-only whitelist (`read`, `ls`, `grep`, `find`)
-  - `parseMcpInput()` — Parses MCP tool call input to determine target tool, mode, and required permission level
-  - `READONLY_MCP_TOOLS` — Set of ~45 MCP tools that only require `low` permission (GitHub read, Atlassian read, etc.)
-  - `MCP_READ_ONLY_MODES` — Modes (`search`, `describe`, `list`, `status`, `connect`) that only require `minimal` permission
-  - Logic: modes in `MCP_READ_ONLY_MODES` → `minimal`; known read tools → `low`; everything else → `medium`
+  - `isKnownReadTool()` — Delegates to `resolveToolLevel()` from `tool-classifier.ts`
+  - `parseMcpInput()` — Parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
+  - `McpToolInfo` / `McpToolInput` — Interfaces for MCP tool call input/output
 
 ### `ui/` — Interactive Handlers
 
