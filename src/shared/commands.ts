@@ -6,9 +6,31 @@ import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { invalidateConfigCache } from "../core/config";
 import { loadPermissionConfig, savePermissionConfig } from "../core/settings";
 
+// ============================================================================
+// NOTIFICATION HELPER
+// ============================================================================
+
+/**
+ * Send a notification to the agent session.
+ *
+ * @param ctx      - Extension context (command or event).
+ * @param message  - The notification message (no prefix needed).
+ * @param level    - Notification level (info or warning).
+ * @param prefix   - Optional prefix (e.g. "[pi-permission-layers] "). Pass empty string in UI mode.
+ */
+export const notify = (
+  ctx: { ui: { notify: (msg: string, level: "info" | "warning") => void } },
+  message: string,
+  level: "info" | "warning" = "info",
+  prefix = "",
+): void => {
+  ctx.ui.notify(`${prefix}${message}`, level);
+};
+
 export const handleConfigSubcommand = async (
   args: string,
   ctx: ExtensionCommandContext,
+  prefix = "",
 ): Promise<void> => {
   const parts = args.trim().split(/\s+/);
   const action = parts[0];
@@ -16,14 +38,14 @@ export const handleConfigSubcommand = async (
   if (action === "show") {
     const config = loadPermissionConfig();
     const configStr = JSON.stringify(config, null, 2);
-    ctx.ui.notify(`Permission Config:\n${configStr}`, "info");
+    notify(ctx, `Permission Config:\n${configStr}`, "info", prefix);
     return;
   }
 
   if (action === "reset") {
     savePermissionConfig({});
     invalidateConfigCache();
-    ctx.ui.notify("Permission config reset to defaults", "info");
+    notify(ctx, "Permission config reset to defaults", "info", prefix);
     return;
   }
 
@@ -53,5 +75,5 @@ Edit ~/.pi/agent/settings.json directly for full control:
   }
 }`;
 
-  ctx.ui.notify(help, "info");
+  notify(ctx, help, "info", prefix);
 };

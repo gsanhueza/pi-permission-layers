@@ -11,7 +11,7 @@ import {
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
 } from "../core/types";
-import { handleConfigSubcommand } from "../shared/commands";
+import { handleConfigSubcommand, notify } from "../shared/commands";
 import { createSettingsList } from "./settings";
 import { setLevel, setMode } from "./state";
 
@@ -51,10 +51,7 @@ export const handlePermissionCommand = async (
     setLevel(state, newLevel, scope === "Global (persists)", ctx);
     const saveMsg =
       scope === "Global (persists)" ? " (saved globally)" : " (session only)";
-    ctx.ui.notify(
-      `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`,
-      "info",
-    );
+    notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`);
     return;
   }
 
@@ -80,7 +77,7 @@ export const handlePermissionCommand = async (
   setLevel(state, newLevel, scope === "Global (persists)", ctx);
   const saveMsg =
     scope === "Global (persists)" ? " (saved globally)" : " (session only)";
-  ctx.ui.notify(`Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`, "info");
+  notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`);
 };
 
 // ============================================================================
@@ -106,9 +103,9 @@ export const handlePermissionModeCommand = async (
     setMode(state, newMode, scope === "Global (persists)");
     const saveMsg =
       scope === "Global (persists)" ? " (saved globally)" : " (session only)";
-    ctx.ui.notify(
+    notify(
+      ctx,
       `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}${saveMsg}`,
-      "info",
     );
     return;
   }
@@ -137,8 +134,8 @@ export const handlePermissionModeCommand = async (
   setMode(state, newMode, scope === "Global (persists)");
   const saveMsg =
     scope === "Global (persists)" ? " (saved globally)" : " (session only)";
-  ctx.ui.notify(
+  notify(
+    ctx,
     `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}${saveMsg}`,
-    "info",
   );
 };

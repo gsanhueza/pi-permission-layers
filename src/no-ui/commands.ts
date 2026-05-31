@@ -11,8 +11,10 @@ import {
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
 } from "../core/types";
-import { handleConfigSubcommand } from "../shared/commands";
+import { handleConfigSubcommand, notify } from "../shared/commands";
 import { setLevel, setMode } from "./state";
+
+const PREFIX = "[pi-permission-layers] ";
 
 // ============================================================================
 // /permission COMMAND
@@ -27,20 +29,22 @@ export const handlePermissionCommand = async (
 
   if (arg === "config" || arg.startsWith("config ")) {
     const configArgs = arg.replace(/^config\s*/, "");
-    await handleConfigSubcommand(configArgs, ctx);
+    await handleConfigSubcommand(configArgs, ctx, PREFIX);
     return;
   }
 
   if (arg && LEVELS.includes(arg as PermissionLevel)) {
     const newLevel = arg as PermissionLevel;
     setLevel(state, newLevel);
-    ctx.ui.notify(`Permission: ${LEVEL_INFO[newLevel].label}`, "info");
+    notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}`, "info", PREFIX);
     return;
   }
 
-  ctx.ui.notify(
+  notify(
+    ctx,
     `Current permission: ${LEVEL_INFO[state.currentLevel].label} (${LEVEL_INFO[state.currentLevel].desc})`,
     "info",
+    PREFIX,
   );
 };
 
@@ -58,15 +62,19 @@ export const handlePermissionModeCommand = async (
   if (arg && PERMISSION_MODES.includes(arg as PermissionMode)) {
     const newMode = arg as PermissionMode;
     setMode(state, newMode);
-    ctx.ui.notify(
+    notify(
+      ctx,
       `Permission mode: ${PERMISSION_MODE_INFO[newMode].label}`,
       "info",
+      PREFIX,
     );
     return;
   }
 
-  ctx.ui.notify(
+  notify(
+    ctx,
     `Current permission mode: ${PERMISSION_MODE_INFO[state.permissionMode].label} (${PERMISSION_MODE_INFO[state.permissionMode].desc})`,
     "info",
+    PREFIX,
   );
 };

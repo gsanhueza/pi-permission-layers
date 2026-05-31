@@ -1,5 +1,6 @@
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
 import { getCachedConfig } from "../core/config";
+import { notify } from "../shared/commands";
 import { initializeSessionState } from "../shared/events";
 import {
   handleBashToolCall,
@@ -29,18 +30,15 @@ export const handleSessionStart = (
     ctx.ui.setStatus("authority", getStatusText(state.currentLevel));
   }
   if (state.currentLevel === "bypassed") {
-    ctx.ui.notify("⚠️ Permission bypassed - all checks disabled!", "warning");
+    notify(ctx, "⚠️ Permission bypassed - all checks disabled!", "warning");
   } else if (!isQuietMode(ctx)) {
-    ctx.ui.notify(
+    notify(
+      ctx,
       `Permission: ${getStatusText(state.currentLevel)} (use /permission to change)`,
-      "info",
     );
   }
   if (state.permissionMode === "block") {
-    ctx.ui.notify(
-      "Permission mode: Block (use /permission-mode to change)",
-      "info",
-    );
+    notify(ctx, "Permission mode: Block (use /permission-mode to change)");
   }
 };
 

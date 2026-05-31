@@ -13,6 +13,7 @@ import type {
 } from "../core/interfaces";
 import type { PermissionLevel } from "../core/types";
 import { LEVEL_INDEX, LEVEL_INFO } from "../core/types";
+import { notify } from "../shared/commands";
 import type { McpToolInput } from "../shared/mcp-input";
 import { parseMcpInput } from "../shared/mcp-input";
 import { checkPermission } from "../shared/permission-check";
@@ -110,7 +111,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 
   if (choice === allowAllLabel) {
     setLevel(state, requiredLevel, false, ctx);
-    ctx.ui.notify(`Permission → ${requiredInfo.label} (session only)`, "info");
+    notify(ctx, `Permission → ${requiredInfo.label} (session only)`);
     return undefined;
   }
 
@@ -221,7 +222,7 @@ export const handleMcpToolCall = async (
   }
 
   if (LEVEL_INDEX[state.currentLevel] >= LEVEL_INDEX[requiredLevel]) {
-    ctx.ui.notify(`MCP tool: ${targetTool}`, "info");
+    notify(ctx, `MCP tool: ${targetTool}`);
     return undefined;
   }
 
