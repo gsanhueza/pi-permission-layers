@@ -607,3 +607,104 @@ describe("no UI: blocks without prompting", () => {
     expect(result!.block).toBe(true);
   });
 });
+
+// ============================================================================
+// Tool permission prompts at different levels
+// ============================================================================
+
+describe("tool: write/edit prompts at minimal level", () => {
+  test("write prompts at minimal", async () => {
+    const state = minimalState();
+    const ctx = makeCtx("Cancel");
+
+    const result = await handleWriteToolCall_UI({
+      state,
+      toolName: "write",
+      filePath: "/tmp/file.txt",
+      ctx: ctx as unknown as ExtensionContext,
+    });
+
+    expect(result).toBeDefined();
+    expect(ctx.selectCalls.length).toBeGreaterThan(0);
+  });
+
+  test("edit prompts at minimal", async () => {
+    const state = minimalState();
+    const ctx = makeCtx("Cancel");
+
+    const result = await handleWriteToolCall_UI({
+      state,
+      toolName: "edit",
+      filePath: "/src/index.ts",
+      ctx: ctx as unknown as ExtensionContext,
+    });
+
+    expect(result).toBeDefined();
+    expect(ctx.selectCalls.length).toBeGreaterThan(0);
+  });
+
+  test("write no prompt at low", async () => {
+    const state = stateAt("low");
+    const ctx = makeCtx("Cancel");
+
+    const result = await handleWriteToolCall_UI({
+      state,
+      toolName: "write",
+      filePath: "/tmp/file.txt",
+      ctx: ctx as unknown as ExtensionContext,
+    });
+
+    expect(result).toBeUndefined();
+    expect(ctx.selectCalls.length).toBe(0);
+  });
+});
+
+// ============================================================================
+// MCP permission prompts with dangerous flag
+// ============================================================================
+
+// Note: Dangerous MCP tool behavior is tested in tool-mcp-permission.test.ts
+// The handler correctly routes dangerous MCP calls to handleDangerousCommand,
+// which always prompts regardless of current level.
+
+// ============================================================================
+// Block mode behavior for tools and MCP
+// ============================================================================
+
+describe("block mode: tool calls blocked", () => {
+  test("write blocked in block mode", async () => {
+    const state = minimalState();
+    state.permissionMode = "block";
+    const ctx = makeCtx("Allow once");
+
+    const result = await handleWriteToolCall_UI({
+      state,
+      toolName: "write",
+      filePath: "/tmp/file.txt",
+      ctx: ctx as unknown as ExtensionContext,
+    });
+
+    expect(result).toBeDefined();
+    expect(result!.block).toBe(true);
+    expect(ctx.selectCalls.length).toBe(0);
+    expect(result!.reason).toContain("block");
+  });
+});
+
+describe("block mode: MCP calls blocked", () => {
+  test("mcp blocked in block mode", async () => {
+    const state = minimalState();
+    state.permissionMode = "block";
+    const ctx = makeCtx("Allow once");
+
+    const result = await handleMcpToolCall_UI(
+      state,
+      { tool: "some_tool" },
+      ctx as unknown as ExtensionContext,
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.block).toBe(true);
+    expect(ctx.selectCalls.length).toBe(0);
+  });
+});
