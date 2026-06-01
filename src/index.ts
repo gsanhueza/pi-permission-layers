@@ -44,9 +44,9 @@ import {
   getPermissionModeCompletions,
 } from "./autocomplete";
 import { PermissionStrategy } from "./strategies/interfaces";
+import { hasInteractiveUI } from "./strategies/internal/ui-detection";
 import { NoUIPermissionStrategy } from "./strategies/no-ui-strategy";
 import { UIPermissionStrategy } from "./strategies/ui-strategy";
-import { hasInteractiveUI } from "./ui/ui";
 
 export default (pi: ExtensionAPI) => {
   let strategy: PermissionStrategy = new NoUIPermissionStrategy();

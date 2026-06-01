@@ -28,7 +28,7 @@ vi.mock("../src/core/config", async () => {
 });
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { hasInteractiveUI } from "../src/ui/ui";
+import { hasInteractiveUI } from "../src/strategies/internal/ui-detection";
 
 // ============================================================================
 // HELPERS
