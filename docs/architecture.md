@@ -7,110 +7,151 @@ src/
 ├── index.ts                # Extension entry point — registers commands, completions & event hooks
 ├── autocomplete.ts         # getPermissionCompletions, getPermissionModeCompletions (tab completion)
 │
-├── shared/                 # Shared logic (single source of truth)
-│   ├── commands.ts         # handleConfigSubcommand (shared by UI & no-UI)
-│   ├── events.ts           # initializeSessionState
-│   ├── mcp-input.ts        # parseMcpInput, McpToolInfo, McpToolInput
-│   ├── permission-check.ts # checkPermission — shared bypass + level comparison guard
-│   └── tool-permission.ts  # classifyAndCheck — shared decision tree for tool permission checks
+├── core/                   # Engine — classification, config, types (strategy-agnostic)
+│   ├── classifiers/
+│   │   ├── shell-classifier.ts     # classifyCommand(), parseCommand(), dangerous command detection
+│   │   ├── permission-resolver.ts  # Shared resolution algorithm (resolveLevel)
+│   │   ├── tool-classifier.ts      # Tool permission classification (resolveToolLevel)
+│   │   └── mcp-classifier.ts       # MCP permission classification (resolveMcpLevel)
+│   ├── constants.ts        # Shell trick patterns, redirection ops, command separators
+│   ├── manager.ts          # SettingsManager class (file I/O, atomic writes, validation)
+│   ├── settings.ts         # Global settings persistence (delegates to SettingsManager)
+│   ├── config.ts           # Config caching, glob→regex conversion, override checking, prefix mappings
+│   ├── interfaces.ts       # PermissionConfig, PermissionOverrides, PermissionPrefixMapping, etc.
+│   ├── types.ts            # PermissionLevel, PermissionMode, LEVELS, LEVEL_INFO, PERMISSION_MODES
+│   └── levels/
+│       ├── index.ts        # `getCommandName()` helper + re-exports `isMinimalLevel`, `isMediumLevel`, `isHighLevel`
+│       ├── minimal.ts      # Minimal level classification (read-only commands)
+│       ├── medium.ts       # Medium level classification (build/install/test)
+│       └── high.ts         # High level classification (network/deployment/shell execution)
 │
-├── no-ui/                  # Non-interactive handlers (print mode, CI)
-│   ├── commands.ts         # handlePermissionCommand, handlePermissionModeCommand
-│   ├── events.ts           # handleSessionStart, handleToolCall
-│   ├── handlers.ts         # handleDangerousCommand, requestPermission, handleBashToolCall, etc.
-│   └── state.ts            # setLevel, setMode (session-only, no status bar)
-│
-├── ui/                     # Interactive handlers (interactive mode)
-│   ├── commands.ts         # handlePermissionCommand, handlePermissionModeCommand
-│   ├── events.ts           # handleSessionStart, handleToolCall (dispatcher)
-│   ├── handlers.ts         # handleDangerousCommand, requestPermission, handleBashToolCall, etc.
-│   ├── settings.ts         # createSettingsList — interactive TUI for quietStartup/forceUI toggles
-│   ├── state.ts            # createInitialState, setLevel, setMode
-│   └── ui.ts               # hasInteractiveUI, notifySystem, isQuietMode, getStatusText, terminal detection
-│
-└── core/
-    ├── classifiers/
-    │   ├── shell-classifier.ts     # classifyCommand(), parseCommand(), dangerous command detection
-    │   ├── permission-resolver.ts  # Shared resolution algorithm (resolveLevel)
-    │   ├── tool-classifier.ts      # Tool permission classification (resolveToolLevel)
-    │   └── mcp-classifier.ts       # MCP permission classification (resolveMcpLevel)
-    ├── constants.ts        # Shell trick patterns, redirection ops, command separators
-    ├── manager.ts          # SettingsManager class (file I/O, atomic writes, validation)
-    ├── settings.ts         # Global settings persistence (delegates to SettingsManager)
-    ├── config.ts            # Config caching, glob→regex conversion, override checking, prefix mappings
-    ├── interfaces.ts       # PermissionConfig, PermissionOverrides, PermissionPrefixMapping, ToolPermissionConfig, McpPermissionConfig, Classification, PermissionState, tool call options
-    ├── types.ts            # PermissionLevel, PermissionMode, LEVELS, LEVEL_INFO, PERMISSION_MODES
-    └── levels/
-        ├── index.ts        # `getCommandName()` helper + re-exports `isMinimalLevel`, `isMediumLevel`, `isHighLevel`
-        ├── minimal.ts      # Minimal level classification (read-only commands)
-        ├── medium.ts       # Medium level classification (build/install/test)
-        └── high.ts         # High level classification (network/deployment/shell execution)
-
-      Note: No `low.ts` classifier exists. `low` is used only as an override target and as the minimum floor for output-redirection and write/edit tool operations.
+└── strategies/              # Strategy pattern — UI vs no-UI presentation
+    ├── interfaces.ts        # PermissionStrategy interface
+    ├── base-strategy.ts     # Abstract base — owns the shared permission algorithm
+    ├── ui-strategy.ts       # Interactive strategy — prompts, status bar, system notifications
+    ├── no-ui-strategy.ts    # Non-interactive strategy — block messages, no prompts
+    └── internal/            # Internal utilities (not a public API)
+        ├── permission-check.ts    # checkPermission — shared bypass + level comparison guard
+        ├── tool-permission.ts     # classifyAndCheck — shared decision tree for tool permission checks
+        ├── mcp-input.ts           # parseMcpInput, McpToolInfo, McpToolInput
+        ├── commands.ts            # handleConfigSubcommand, notify
+        ├── events.ts              # initializeSessionState
+        ├── settings-ui.ts         # createSettingsList — interactive TUI settings
+        ├── ui-rendering.ts        # getStatusText, isQuietMode, notifySystem, terminal detection
+        └── ui-detection.ts        # hasInteractiveUI — decides which strategy to use
 
 tests/
-├── permission.test.ts           # Command classification tests
-├── permission-prompt.test.ts    # UI prompt behavior tests
-└── interactive-ui.test.ts       # hasInteractiveUI, isQuietMode, notifySystem, terminal detection, systemNotifications
+├── check-permission.test.ts        # checkPermission() — bypass + level comparison guard
+├── classify-and-check.test.ts      # classifyAndCheck() — shared decision tree for tool permission
+├── config-subcommand.test.ts       # handleConfigSubcommand — config show/reset/help
+├── config-validation.test.ts       # SettingsManager validation
+├── fixtures/
+│   ├── helpers.ts                  # Test helpers
+│   └── mock-settings.json          # Mock settings for tests
+├── interactive-ui.test.ts          # hasInteractiveUI, isQuietMode, notifySystem, terminal detection
+├── mcp-input-parsing.test.ts       # parseMcpInput() — MCP tool input parsing
+├── mcp-permission.test.ts          # MCP tool permission classification
+├── permission-prompt.test.ts       # UI prompt behavior tests
+├── session-only-behavior.test.ts   # Session-only vs global persistence behavior
+├── shell-permission.test.ts        # Command classification tests
+├── strategy-hooks.test.ts          # Abstract hook behavior (UI vs no-UI)
+├── tool-permission.test.ts         # Tool permission classification and shared decision tree
+└── ui-rendering.test.ts            # getStatusText, isQuietMode, notifySystem, terminal bundle ID detection
 ```
+
+## Testing
+
+Run tests with:
+
+```bash
+npm run test
+```
+
+### Test Structure
+
+- **check-permission.test.ts** — Tests `checkPermission()` — shared bypass + level comparison guard
+- **classify-and-check.test.ts** — Tests `classifyAndCheck()` — shared decision tree for tool permission checks
+- **config-subcommand.test.ts** — Tests `handleConfigSubcommand()` — config show/reset/help
+- **config-validation.test.ts** — Tests `SettingsManager` validation (overrides, tools, MCP, prefix mappings)
+- **interactive-ui.test.ts** — Tests `hasInteractiveUI()`, `isQuietMode()`, `notifySystem()`, terminal detection, `systemNotifications` handling
+- **mcp-input-parsing.test.ts** — Tests `parseMcpInput()` — MCP tool input parsing
+- **mcp-permission.test.ts** — Tests MCP tool permission classification
+- **permission-prompt.test.ts** — Tests UI handler functions
+  - Tests prompt messages and options
+  - Tests Allow/Cancel/Block behavior
+  - Tests block mode vs ask mode
+- **session-only-behavior.test.ts** — Tests session-only vs global persistence behavior
+- **shell-permission.test.ts** — Tests `classifyCommand()` directly
+  - Covers all 5 permission levels
+  - Tests command parsing, pipelines, redirections
+  - Tests shell tricks (`$()`, backticks, `eval`)
+  - Tests config overrides and prefix mappings
+- **strategy-hooks.test.ts** — Tests abstract hook behavior (UI vs no-UI implementations)
+- **tool-permission.test.ts** — Tests tool permission classification and the shared decision tree
+- **ui-rendering.test.ts** — Tests `getStatusText()`, `isQuietMode()`, `notifySystem()`, terminal bundle ID detection
+
+> **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm run test` before committing.
 
 ## Directory Structure
 
-### `shared/` — Shared Logic
+### `core/` — Engine (Strategy-Agnostic)
 
-Functions used by both interactive and non-interactive handlers:
+Low-level classification, config, and types. Used by both UI and no-UI strategies.
 
-- `commands.ts` — `handleConfigSubcommand()` (config show/reset/help)
+See the individual module descriptions below.
+
+### `strategies/` — Strategy Pattern
+
+The entry point (`index.ts`) selects between two strategies based on `hasInteractiveUI(ctx)`:
+
+- **`UIPermissionStrategy`** — Used when running interactively. Implements prompts (select menus), status bar updates, and system notifications.
+- **`NoUIPermissionStrategy`** — Used in print mode (`pi -p`), CI, or when the agent has no UI. Returns block messages with helpful hints. No prompts.
+
+Both share the same permission algorithm via `BasePermissionStrategy` (abstract base class). The base class owns:
+- State management (`PermissionState`)
+- `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleToolCall()`, `checkAndHandleTool()`
+- `handlePermissionCommand()`, `handlePermissionModeCommand()`
+- `setLevel()`, `setMode()`, `createInitialState()`
+- Abstract hooks that concrete strategies implement: `onDangerous()`, `onRequest()`, `onMcpAllowed()`, `onSessionStart()`, `onViewLevel()`, `onSetLevel()`, `onViewMode()`, `onSetMode()`, `onSettings()`, `configPrefix()`
+
+### `strategies/internal/` — Internal Utilities
+
+Shared code internal to the strategy module. Not a public API.
+
+- `permission-check.ts` — `checkPermission()` — shared bypass + level comparison guard used by both UI and no-UI strategies
+- `tool-permission.ts` — `classifyAndCheck()` — shared decision tree (unknown → dangerous → level → allow) used by both strategies
+- `mcp-input.ts` — MCP input parsing: `parseMcpInput()` parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
+- `commands.ts` — `handleConfigSubcommand()` (config show/reset/help), `notify()` (unified notification helper)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
-- `mcp-input.ts` — MCP input parsing:
-  - `parseMcpInput()` — Parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
-  - `McpToolInfo` / `McpToolInput` — Interfaces for MCP tool call input/output
-- `permission-check.ts` — `checkPermission()` — shared bypass + level comparison guard used by both UI and no-UI `requestPermission`
-- `tool-permission.ts` — `classifyAndCheck()` — shared decision tree (unknown → dangerous → level → allow) used by both UI and no-UI `checkToolPermission` wrappers
-
-### `ui/` — Interactive Handlers
-
-Used when `hasInteractiveUI(ctx)` returns `true` (interactive mode):
-
-- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()`, `checkToolPermission()` (wraps `classifyAndCheck` from `shared/tool-permission.ts`)
-- `commands.ts` — `handlePermissionCommand()`, `handlePermissionModeCommand()` (with interactive select prompts for level/mode scope)
-- `events.ts` — `handleSessionStart()` (initializes state, sets status bar, shows notifications), `handleToolCall()` (dispatches to specific handlers)
-- `settings.ts` — `createSettingsList()` — renders an interactive TUI `SettingsList` for toggling `quietStartup`, `forceUI`, and `systemNotifications`
-- `state.ts` — `createInitialState()`, `setLevel()`, `setMode()` (with global persistence and status bar update)
-- `ui.ts` — `hasInteractiveUI()` (detects interactive context), `notifySystem()` (desktop notifications — respects `systemNotifications` setting: `"off"`/`"on"`/`"unfocused"`/`"persistent"`), `isQuietMode()`, `getStatusText()`, terminal bundle ID detection (macOS: Ghostty, iTerm2, Kitty, Alacritty, Warp, Apple Terminal, VS Code), tmux awareness
-
-### `no-ui/` — Non-Interactive Handlers
-
-Used when `hasInteractiveUI(ctx)` returns `false` (print mode, CI):
-
-- `handlers.ts` — `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleDangerousCommand()`, `requestPermission()`, `checkToolPermission()` (wraps `classifyAndCheck` from `shared/tool-permission.ts`) — same signatures as `ui/` counterparts but always return block results with helpful error messages (no prompts)
-- `commands.ts` — `handlePermissionCommand()`, `handlePermissionModeCommand()` — without interactive select prompts; setting a level always saves session-only (no global persistence)
-- `events.ts` — `handleSessionStart()` (calls `initializeSessionState` only, no notifications or status bar), `handleToolCall()` (dispatches to no-UI handlers)
-- `state.ts` — `setLevel()`, `setMode()` — simplified state mutation (always session-only, no ctx, no status bar update)
+- `settings-ui.ts` — `createSettingsList()` — renders an interactive TUI `SettingsList` for toggling `quietStartup`, `forceUI`, and `systemNotifications`
+- `ui-rendering.ts` — `getStatusText()`, `isQuietMode()`, `notifySystem()`, terminal bundle ID detection (macOS: Ghostty, iTerm2, Kitty, Alacritty, Warp, Apple Terminal, VS Code), tmux awareness
+- `ui-detection.ts` — `hasInteractiveUI(ctx)` — detects interactive context:
+  1. `PI_FORCEUI` env var override (`1`, `true`, `yes`)
+  2. `forceUI` setting in `permissionConfig`
+  3. `ctx.hasUI` from the agent context
+  4. `--mode` flag from argv (via `--mode=` or `--mode <value>`)
+  5. Returns `true` if any of the above indicate interactivity
 
 ### `index.ts` — Entry Point
 
-Registers commands with tab completions and event hooks. Creates a shared `state` via `createInitialState()` and uses a `dispatch` helper to route every call to the `ui/` or `no-ui/` handler pair:
+Default export function that receives the `ExtensionAPI` instance. Registers commands with tab completions and event hooks. Selects the active strategy on `session_start`:
 
 ```ts
-const state = createInitialState();
+let strategy: PermissionStrategy = new NoUIPermissionStrategy();
 
-const dispatch = <T>(ctx: ExtensionContext, ui: () => T, noUi: () => T): T =>
-  hasInteractiveUI(ctx) ? ui() : noUi();
-
-pi.registerCommand("permission", {
-  description: "View or change permission level",
-  getArgumentCompletions: getPermissionCompletions,
-  handler: (args, ctx) =>
-    dispatch(ctx,
-      () => handlePermissionCommand(state, args, ctx),
-      () => handlePermissionCommand_noUI(state, args, ctx),
-    ),
+pi.on("session_start", async (_event: SessionStartEvent, ctx: ExtensionContext) => {
+  if (hasInteractiveUI(ctx)) strategy = new UIPermissionStrategy();
+  strategy.handleSessionStart(ctx);
 });
 ```
 
-Registered commands: `permission`, `permission-mode` (both with `getArgumentCompletions` for tab completion)
-Registered events: `session_start`, `tool_call`
+**Registered commands:**
+- `permission` — View or change permission level (with `getArgumentCompletions`)
+- `permission-mode` — Set permission prompt mode (`ask`/`block`)
+
+**Registered events:**
+- `session_start` — Initialize strategy and session state
+- `tool_call` — Route to strategy's `handleToolCall()`
 
 ## Permission-Core → Split into `core/`
 
@@ -134,7 +175,7 @@ Settings persistence — thin wrapper around `SettingsManager`:
 
 Atomic file writes and validation are handled by `SettingsManager` (see `core/manager.ts` below).
 
-### `classifiers/permission-resolver.ts`
+### `core/classifiers/permission-resolver.ts`
 
 Shared resolution algorithm (delta/override model):
 - `resolveLevel(name, config, defaults)` — Resolves the effective permission level for any entry, checking user config then falling back to defaults
@@ -142,13 +183,13 @@ Shared resolution algorithm (delta/override model):
 
 Resolution order (most restrictive wins): dangerous → high → medium → low → minimal.
 
-### `classifiers/tool-classifier.ts`
+### `core/classifiers/tool-classifier.ts`
 
 Tool permission classification:
 - `resolveToolLevel(toolName, userConfig)` — Resolves the effective permission level for a tool
 - `DEFAULT_TOOL_PERMISSIONS` — Built-in defaults: `read`/`ls`/`grep`/`find` → minimal, `write`/`edit` → low
 
-### `classifiers/mcp-classifier.ts`
+### `core/classifiers/mcp-classifier.ts`
 
 MCP permission classification:
 - `resolveMcpLevel(targetTool, mode, userConfig)` — Resolves the effective permission level for an MCP tool call, checking tool name first then mode
@@ -179,12 +220,12 @@ Configuration utilities:
 ### `core/constants.ts`
 
 Static classification data:
-- `SHELL_EXECUTION_COMMANDS` — `eval`, `exec`, `source`, `.`, `env`, `command`, `builtin`, `time`, `nice`, `nohup`, `timeout`, `watch`, `strace` (note: `xargs` is handled separately in `minimal.ts` with conditional logic)
-- `SHELL_TRICK_PATTERNS` — `$(cmd)`, backticks, `<(cmd)`, `>(cmd)`
-- `OUTPUT_REDIRECTION_OPS` — `>`, `>>`, `>|`, `&>`, `&>>`
-- `ALL_REDIRECTION_OPS` — Includes input redirection `<`, `<&`, `<>`
-- `COMMAND_SEPARATORS` — `|`, `&&`, `||`, `;`, `&`
-- `SAFE_REDIRECTION_TARGETS` — `/dev/null`, `/dev/stdout`, `/dev/stderr`, `/dev/fd/1`, `/dev/fd/2`
+- `SHELL_EXECUTION_COMMANDS` — Set of: `eval`, `exec`, `source`, `.`, `env`, `command`, `builtin`, `time`, `nice`, `nohup`, `timeout`, `watch`, `strace`
+- `SHELL_TRICK_PATTERNS` — RegExp patterns for: `$(cmd)`, backticks, `<(cmd)`, `>(cmd)`
+- `OUTPUT_REDIRECTION_OPS` — Set of: `>`, `>>`, `>|`, `&>`, `&>>`
+- `ALL_REDIRECTION_OPS` — Set including input redirection: `<`, `<&`, `<>`
+- `COMMAND_SEPARATORS` — Set of: `|`, `&&`, `||`, `;`, `&`
+- `SAFE_REDIRECTION_TARGETS` — Set of: `/dev/null`, `/dev/stdout`, `/dev/stderr`, `/dev/fd/1`, `/dev/fd/2`
 
 ### `core/levels/minimal.ts`
 
@@ -218,7 +259,7 @@ Network/deployment/shell execution:
 - `kubectl`, `helm`, `terraform`, `pulumi`, `ansible`
 - `ssh`, `scp`, `rsync`
 
-### `classifiers/shell-classifier.ts` — Shell Classification Pipeline
+### `core/classifiers/shell-classifier.ts` — Shell Classification Pipeline
 
 The classifier runs in this order:
 1. **Prefix normalization** — `fvm flutter build` → `flutter build`
@@ -226,7 +267,7 @@ The classifier runs in this order:
 3. **Override check** — User-configured patterns (dangerous → high → medium → low → minimal, most restrictive wins)
 4. **Output redirection** — `>`, `>>` to non-special files → minimum **low** (note: no `isLowLevel()` classifier exists; "low" is set only as a floor for file-writing commands)
 5. **Segment classification** — Each pipe/separator segment is classified individually:
-   - `SHELL_EXECUTION_COMMANDS` (eval, exec, source, `.`, env, command, builtin, time, nice, nohup, timeout, watch, strace) → **high**
+   - `SHELL_EXECUTION_COMMANDS` (Set: eval, exec, source, `.`, env, command, builtin, time, nice, nohup, timeout, watch, strace) → **high**
    - `isDangerousCommand()` (sudo, rm -rf, chmod 777, dd of=/dev/*, fdisk, parted, format, mkfs*, shutdown, reboot, halt, poweroff, init, fork bomb) → **high + dangerous flag**
    - `isMinimalLevel()` → **minimal**
    - `isMediumLevel()` → **medium**
@@ -253,26 +294,37 @@ The classifier runs in this order:
 Primitive types and constants:
 - `PermissionLevel` — `"minimal" | "low" | "medium" | "high" | "bypassed"`
 - `PermissionMode` — `"ask" | "block"`
-- `LEVELS` / `PERMISSION_MODES` — Ordered arrays
-- `LEVEL_INDEX` — Numeric ordering (minimal: 0 → bypassed: 4)
-- `LEVEL_INFO` — Label and short description per level
-- `PERMISSION_MODE_INFO` — Label and description per mode
+- `LEVELS` — Ordered array: `["minimal", "low", "medium", "high", "bypassed"]`
+- `PERMISSION_MODES` — Ordered array: `["ask", "block"]`
+- `LEVEL_INDEX` — Numeric ordering: `minimal: 0, low: 1, medium: 2, high: 3, bypassed: 4`
+- `LEVEL_INFO` — `{ label, desc }` per level: minimal=Read-only, low=File ops only, medium=Dev operations, high=Full operations, bypassed=All checks disabled
+- `PERMISSION_MODE_INFO` — `{ label, desc }` per mode: ask=Prompt when permission is required, block=Block instead of prompting
 - `LEVEL_INFO` also provides the short descriptions used in blocked messages (no separate `LEVEL_ALLOWED_DESC` constant)
-- `Notification` — `"off" | "unfocused" | "on" | "persistent"` — Controls OS notification behavior:
+- `Notification` — `"off" | "on" | "unfocused" | "persistent"` — Controls OS notification behavior:
   - `"off"` — Fully disabled, no notifications shown
   - `"on"` — Always shown regardless of focus
   - `"unfocused"` — Only shown when the terminal is not focused (default)
   - `"persistent"` — Always shown with critical/persistent priority (Linux: `-u critical` flag)
 
-### `core/interfaces.ts`
+### `PermissionStrategy` Interface
 
-Interface definitions:
+The strategy contract that both UI and no-UI implementations share:
+- `handlePermissionCommand(args, ctx)` — Handle the `/permission` command
+- `handlePermissionModeCommand(args, ctx)` — Handle the `/permission-mode` command
+- `handleSessionStart(ctx)` — Called on session start
+- `handleToolCall(event, ctx)` — Called on every tool call, returns `{ block: true; reason }` or `undefined`
+- `createInitialState()` — Create a fresh permission state (loads global defaults)
+- `setLevel(level, saveGlobally, ctx)` — Set the permission level
+- `setMode(mode, saveGlobally)` — Set the permission mode
+
+### `core/interfaces.ts` — Other Interface Definitions
+
 - `PermissionConfig` — Overrides (per-level glob patterns), prefix mappings, tools (per-tool permission levels), mcp (per-MCP permission levels), quietStartup, forceUI, systemNotifications
 - `PermissionOverrides` — Per-level override arrays: `{ minimal?, low?, medium?, high?, dangerous? }`
 - `PermissionPrefixMapping` — `{ from: string, to: string }` for normalizing version-manager commands
 - `ToolPermissionConfig` — Per-level tool name assignments: `{ minimal?, low?, medium?, high?, dangerous? }`
 - `McpPermissionConfig` — Per-level MCP tool/mode name assignments: `{ minimal?, low?, medium?, high?, dangerous? }`
-- `Classification` — `{ level, dangerous }`
+- `Classification` — `{ level: PermissionLevel, dangerous: boolean }`
 - `PermissionState` — `currentLevel`, `isSessionOnly`, `permissionMode`, `isModeSessionOnly`
 - `WriteToolCallOptions` — Options passed to write tool handler (state, toolName, filePath, ctx)
 - `PermissionRequestOptions` — Options for permission request flow (state, message, requiredLevel, details, notifyTitle, envVarHint, ctx)
@@ -282,12 +334,12 @@ Interface definitions:
 - Uses [`shell-quote`](https://npmjs.com/package/shell-quote) for command parsing
 - Caches compiled regex patterns (max 500 entries) and config (5s TTL) for performance
 - Handles tmux terminal detection for appropriate notifications
-- Supports both interactive and print mode (`-p`) execution
+- Supports both interactive and print mode (`-p`) execution via the **strategy pattern**
 - Atomic file writes for settings persistence (write to `.tmp`, then `rename`)
 - Settings validation limits overrides to 100 patterns per level, tool/MCP entries to 100 per level, and 50 prefix mappings total
 - Unknown tools (not in read whitelist) are blocked with HIGH permission requirement
-- Interactive and non-interactive handlers are fully separated into `ui/` and `no-ui/` directories
-- Shared logic lives in `shared/` to avoid duplication between the two modes
+- Interactive and non-interactive behaviors are separated into `UIPermissionStrategy` and `NoUIPermissionStrategy`, sharing `BasePermissionStrategy` for the common algorithm
+- Shared utilities live in `strategies/internal/` — internal to the strategy module, not a public API
 
 ## Blocked Message Format
 

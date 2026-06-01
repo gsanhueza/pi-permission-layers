@@ -294,27 +294,6 @@ Run tests with:
 npm run test
 ```
 
-### Test Structure
-
-- **shell-permission.test.ts** — Tests `classifyCommand()` directly
-  - Covers all 5 permission levels
-  - Tests command parsing, pipelines, redirections
-  - Tests shell tricks (`$()`, backticks, `eval`)
-  - Tests config overrides and prefix mappings
-
-- **permission-prompt.test.ts** — Tests UI handler functions
-  - Tests prompt messages and options
-  - Tests Allow/Cancel/Block behavior
-  - Tests block mode vs ask mode
-
-- **interactive-ui.test.ts** — Tests `hasInteractiveUI()`, `isQuietMode()`, `notifySystem()`, terminal detection, `systemNotifications` handling
-
-- **mcp-permission.test.ts** — Tests MCP tool permission classification
-
-- **tool-permission.test.ts** — Tests tool permission classification and the shared decision tree
-
-- **config-validation.test.ts** — Tests `SettingsManager` validation (overrides, tools, MCP, prefix mappings)
-
 > **New features MUST be covered by tests.** All command classification changes require test updates. Run `npm run test` before committing.
 
 ## Architecture
