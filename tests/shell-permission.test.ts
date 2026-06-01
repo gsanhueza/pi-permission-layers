@@ -4,19 +4,10 @@
  * Run with: npm test
  */
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, test, vi } from "vitest";
+import { getSettingsMock } from "./fixtures/helpers";
 
-// Mock settings to avoid getAgentDir import chain
-const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
-const mockSettings = JSON.parse(
-  readFileSync(mockSettingsPath, "utf-8"),
-) as Record<string, unknown>;
-vi.mock("../src/core/settings", () => ({
-  loadPermissionConfig: () =>
-    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
-}));
+vi.mock("../src/core/settings", () => getSettingsMock());
 
 import { classifyCommand } from "../src/core/classifiers/shell-classifier";
 import { type PermissionConfig } from "../src/core/interfaces";

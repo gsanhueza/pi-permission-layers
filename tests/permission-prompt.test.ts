@@ -6,32 +6,24 @@
  *
  * Run with: npm test
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  getPiCodingAgentMock,
+  getSettingsMock,
+  makeCtx,
+  resetStrategyState,
+} from "./fixtures/helpers";
 
-// Mock settings module to avoid reading from real ~/.pi/agent/settings.json
-const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
-const mockSettings = JSON.parse(
-  readFileSync(mockSettingsPath, "utf-8"),
-) as Record<string, unknown>;
+vi.mock("../src/core/settings", () =>
+  getSettingsMock({
+    loadGlobalPermissionLevel: () => null,
+    loadGlobalPermissionMode: () => null,
+    saveGlobalPermissionLevel: () => {},
+    saveGlobalPermissionMode: () => {},
+  }),
+);
 
-vi.mock("../src/core/settings", () => ({
-  loadPermissionConfig: () =>
-    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
-  loadGlobalPermissionLevel: () => null,
-  loadGlobalPermissionMode: () => null,
-  saveGlobalPermissionLevel: () => {},
-  saveGlobalPermissionMode: () => {},
-}));
-
-// Mock the pi-coding-agent package to avoid the broken @mariozechner/pi-ai dependency.
-// All exports from that package are type-only, so providing empty objects is sufficient.
-vi.mock("@earendil-works/pi-coding-agent", () => ({
-  ExtensionContext: {},
-  ExtensionCommandContext: {},
-  ToolCallEvent: {},
-}));
+vi.mock("@earendil-works/pi-coding-agent", () => getPiCodingAgentMock());
 
 import { NoUIPermissionStrategy } from "../src/strategies/no-ui-strategy";
 import { UIPermissionStrategy } from "../src/strategies/ui-strategy";
@@ -43,56 +35,8 @@ import { UIPermissionStrategy } from "../src/strategies/ui-strategy";
 const uiStrategy = new UIPermissionStrategy();
 const noUIStrategy = new NoUIPermissionStrategy();
 
-// ============================================================================
-// Mock context factory
-// ============================================================================
-
-interface SelectCall {
-  message: string;
-  options: string[];
-}
-
-interface NotifyCall {
-  message: string;
-  type: string;
-}
-
-interface MockCtx {
-  ui: {
-    select: (message: string, options: string[]) => Promise<string | null>;
-    notify: (message: string, type: string) => void;
-    setStatus: (key: string, value: string) => void;
-  };
-  selectCalls: SelectCall[];
-  notifyCalls: NotifyCall[];
-}
-
-const makeCtx = (selectResponse: string | null = "Cancel"): MockCtx => {
-  const selectCalls: SelectCall[] = [];
-  const notifyCalls: NotifyCall[] = [];
-
-  return {
-    ui: {
-      select: async (message: string, options: string[]) => {
-        selectCalls.push({ message, options });
-        return selectResponse;
-      },
-      notify: (message: string, type: string) => {
-        notifyCalls.push({ message, type });
-      },
-      setStatus: () => {},
-    },
-    selectCalls,
-    notifyCalls,
-  };
-};
-
-// Reset strategy state before each test so tests don't leak into each other
 beforeEach(() => {
-  uiStrategy.state.currentLevel = "minimal";
-  uiStrategy.state.isSessionOnly = false;
-  uiStrategy.state.permissionMode = "ask";
-  uiStrategy.state.isModeSessionOnly = false;
+  resetStrategyState(uiStrategy);
 });
 
 // ============================================================================

@@ -3,19 +3,10 @@
  *
  * Run with: npm test
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { getSettingsMock, withArgv } from "./fixtures/helpers";
 
-// Mock settings to avoid getAgentDir import chain
-const mockSettingsPath = resolve(__dirname, "fixtures", "mock-settings.json");
-const mockSettings = JSON.parse(
-  readFileSync(mockSettingsPath, "utf-8"),
-) as Record<string, unknown>;
-vi.mock("../src/core/settings", () => ({
-  loadPermissionConfig: () =>
-    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
-}));
+vi.mock("../src/core/settings", () => getSettingsMock());
 
 // Mock getCachedConfig before importing hasInteractiveUI
 const mockCachedConfig = vi.fn();
@@ -62,14 +53,11 @@ describe("hasInteractiveUI: forceUI false — unchanged behavior", () => {
   });
 
   test("returns false when mode is print", () => {
-    const originalArgv = process.argv;
-    process.argv = ["node", "pi", "--mode=print"];
-    try {
-      const ctx = makeCtx({ hasUI: true });
-      expect(hasInteractiveUI(ctx)).toBe(false);
-    } finally {
-      process.argv = originalArgv;
-    }
+    expect(
+      withArgv(["node", "pi", "--mode=print"], () =>
+        hasInteractiveUI(makeCtx({ hasUI: true })),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -88,25 +76,19 @@ describe("hasInteractiveUI: forceUI true — forces interactive", () => {
   });
 
   test("returns true even when mode is print", () => {
-    const originalArgv = process.argv;
-    process.argv = ["node", "pi", "--mode=print"];
-    try {
-      const ctx = makeCtx({ hasUI: true });
-      expect(hasInteractiveUI(ctx)).toBe(true);
-    } finally {
-      process.argv = originalArgv;
-    }
+    expect(
+      withArgv(["node", "pi", "--mode=print"], () =>
+        hasInteractiveUI(makeCtx({ hasUI: true })),
+      ),
+    ).toBe(true);
   });
 
   test("returns true even when ctx has no UI and mode is print", () => {
-    const originalArgv = process.argv;
-    process.argv = ["node", "pi", "--mode=print"];
-    try {
-      const ctx = makeCtx();
-      expect(hasInteractiveUI(ctx)).toBe(true);
-    } finally {
-      process.argv = originalArgv;
-    }
+    expect(
+      withArgv(["node", "pi", "--mode=print"], () =>
+        hasInteractiveUI(makeCtx()),
+      ),
+    ).toBe(true);
   });
 });
 
