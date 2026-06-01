@@ -4,9 +4,9 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVEL_INFO, PERMISSION_MODE_INFO } from "../core/types";
-import { notify } from "../shared/commands";
-import { checkPermission } from "../shared/permission-check";
 import { BasePermissionStrategy } from "./base-strategy";
+import { notify } from "./internal/commands";
+import { checkPermission } from "./internal/permission-check";
 
 const PREFIX = "[pi-permission-layers] ";
 

@@ -5,9 +5,9 @@
  * false if permission is insufficient.
  */
 
-import type { PermissionState } from "../core/interfaces";
-import type { PermissionLevel } from "../core/types";
-import { LEVEL_INDEX } from "../core/types";
+import type { PermissionState } from "../../core/interfaces";
+import type { PermissionLevel } from "../../core/types";
+import { LEVEL_INDEX } from "../../core/types";
 
 export const checkPermission = (
   state: PermissionState,

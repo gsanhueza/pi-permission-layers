@@ -9,11 +9,15 @@ import {
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
 } from "../core/types";
-import { notify } from "../shared/commands";
-import { checkPermission } from "../shared/permission-check";
-import { createSettingsList } from "../ui/settings";
-import { getStatusText, isQuietMode, notifySystem } from "../ui/ui";
 import { BasePermissionStrategy } from "./base-strategy";
+import { notify } from "./internal/commands";
+import { checkPermission } from "./internal/permission-check";
+import { createSettingsList } from "./internal/settings-ui";
+import {
+  getStatusText,
+  isQuietMode,
+  notifySystem,
+} from "./internal/ui-rendering";
 
 /**
  * UI strategy — uses prompts, status bar, and system notifications.

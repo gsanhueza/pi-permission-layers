@@ -2,13 +2,13 @@
  * Shared event handling - session initialization
  */
 
-import type { PermissionState } from "../core/interfaces";
+import type { PermissionState } from "../../core/interfaces";
 import {
   loadGlobalPermissionLevel,
   loadGlobalPermissionMode,
-} from "../core/settings";
-import type { PermissionLevel } from "../core/types";
-import { LEVELS } from "../core/types";
+} from "../../core/settings";
+import type { PermissionLevel } from "../../core/types";
+import { LEVELS } from "../../core/types";
 
 // ============================================================================
 // SESSION INITIALIZATION

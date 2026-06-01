@@ -6,8 +6,8 @@
  * `requestPermission` call.
  */
 
-import type { Classification, PermissionState } from "../core/interfaces";
-import { LEVEL_INDEX } from "../core/types";
+import type { Classification, PermissionState } from "../../core/interfaces";
+import { LEVEL_INDEX } from "../../core/types";
 
 interface ClassifyAndCheckResult {
   /** `true` if the tool is blocked at this point (caller should return early). */

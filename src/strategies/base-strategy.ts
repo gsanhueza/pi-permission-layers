@@ -13,12 +13,12 @@ import {
 } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVELS, LEVEL_INDEX, PERMISSION_MODES } from "../core/types";
-import { handleConfigSubcommand } from "../shared/commands";
-import { initializeSessionState } from "../shared/events";
-import type { McpToolInput } from "../shared/mcp-input";
-import { parseMcpInput } from "../shared/mcp-input";
-import { classifyAndCheck } from "../shared/tool-permission";
 import { PermissionStrategy } from "./interfaces";
+import { handleConfigSubcommand } from "./internal/commands";
+import { initializeSessionState } from "./internal/events";
+import type { McpToolInput } from "./internal/mcp-input";
+import { parseMcpInput } from "./internal/mcp-input";
+import { classifyAndCheck } from "./internal/tool-permission";
 
 /**
  * Abstract base class that owns the shared permission algorithm.
