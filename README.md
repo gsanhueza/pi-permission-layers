@@ -179,6 +179,8 @@ Override priority (highest to lowest):
 
 > **Note:** When a command matches patterns in multiple levels, the **most restrictive** level wins. Avoid overlapping patterns across levels. For example, don't put `tmux *` in medium if you want `tmux list-*` to be minimal.
 
+> **Per-command overrides:** For compound commands (pipes, `&&`, `||`, `;`), each command is checked against overrides independently. If a command matches an override pattern, it uses the override level instead of its default classification. For example, `cd /tmp && command_a` with `overrides.low: ["command_a"]` classifies `command_a` as **low** (not high from default), and the final result is **low** since `cd /tmp` is minimal.
+
 > **Note on the `low` level:** `low` is not a standalone command classification level (there is no `isLowLevel()` classifier). Instead, it serves as a permission threshold used for output redirections, write/edit tool calls, known read-only MCP tools, and as an override target. Commands like `mkdir`, `cp`, `mv`, `ln`, and `touch` are classified as `medium`, not `low`.
 
 ### Example: Full Config with Tools and MCP Overrides

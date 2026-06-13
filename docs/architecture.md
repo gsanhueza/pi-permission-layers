@@ -266,15 +266,19 @@ The classifier runs in this order:
 2. **Shell trick detection** — `$(cmd)`, backticks, `<(cmd)`, `>(cmd)`, `${VAR:-$(cmd)}` → always **high**
 3. **Override check** — User-configured patterns (dangerous → high → medium → low → minimal, most restrictive wins)
 4. **Output redirection** — `>`, `>>` to non-special files → minimum **low** (note: no `isLowLevel()` classifier exists; "low" is set only as a floor for file-writing commands)
-5. **Segment classification** — Each pipe/separator segment is classified individually:
+5. **Per-command override** — Each command is checked against user-configured override patterns. If a match is found, the override replaces the command's classification entirely (prioritizing override over classifier):
+   - `cd /tmp && command_a` with `overrides.low: ["command_a"]` → command `command_a` → **low** (not high from default classification)
+   - `sudo ls` with `overrides.low: ["sudo ls"]` → **low** (override removes dangerous flag)
+   - `rm -rf /` with `overrides.dangerous: ["rm -rf /"]` → **high + dangerous**
+6. **Segment classification** — Each pipe/separator command is classified individually:
    - `SHELL_EXECUTION_COMMANDS` (Set: eval, exec, source, `.`, env, command, builtin, time, nice, nohup, timeout, watch, strace) → **high**
    - `isDangerousCommand()` (sudo, rm -rf, chmod 777, dd of=/dev/*, fdisk, parted, format, mkfs*, shutdown, reboot, halt, poweroff, init, fork bomb) → **high + dangerous flag**
    - `isMinimalLevel()` → **minimal**
    - `isMediumLevel()` → **medium**
    - `isHighLevel()` → **high**
    - Default fallback → **high**
-6. **Pipeline trick detection** — If a pipe leads to `bash`, `sh`, `zsh`, `node`, `python`, `python3`, `ruby`, or `perl` → **high**
-7. **Max level** — The highest level across all segments wins
+7. **Pipeline trick detection** — If a pipe leads to `bash`, `sh`, `zsh`, `node`, `python`, `python3`, `ruby`, or `perl` → **high**
+8. **Max level** — The highest level across all segments/commands wins
 
 ### Dangerous Command Detection (`isDangerousCommand`)
 
