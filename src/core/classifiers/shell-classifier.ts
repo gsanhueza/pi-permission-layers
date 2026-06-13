@@ -250,9 +250,9 @@ export const classifyCommand = (
   }
 
   const override = checkOverrides(normalizedCommand, effectiveConfig.overrides);
-  if (override) {
-    return override;
-  }
+
+  // Check overrides per complete command
+  if (override) return override;
 
   let maxLevel: PermissionLevel = "minimal";
   let dangerous = false;
@@ -263,7 +263,14 @@ export const classifyCommand = (
 
   for (let i = 0; i < parsed.segments.length; i++) {
     const segment = parsed.segments[i];
-    const segmentClass = classifySegment(segment);
+    const segmentClassification = classifySegment(segment);
+    const commandOverride = checkOverrides(
+      segment.join(" "),
+      effectiveConfig.overrides,
+    );
+
+    // Scan per segment (but prioritize command override)
+    const segmentClass = commandOverride ?? segmentClassification;
 
     if (segmentClass.dangerous) {
       dangerous = true;
