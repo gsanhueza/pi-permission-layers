@@ -20,10 +20,10 @@ A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permiss
 | Level      | Description            | Allowed Operations                                                                                                        |
 | ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `minimal`  | Read-only (default)    | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc.                                                              |
-| `low`      | File threshold         | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools                                      |
+| `low`      | File ops only          | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools                                      |
 | `medium`   | Development operations | Create/edit files (`mkdir`, `cp`, `mv`, `ln`), `npm install`, builds, tests, `git commit/pull`, linters, package managers |
 | `high`     | Full operations        | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.)                   |
-| `bypassed` | All checks disabled    | Everything (dangerous — CI/containers only)                                                                               |
+| `bypassed` | Bypassed               | Everything (dangerous — CI/containers only)                                                                               |
 
 **Dangerous commands** (always require confirmation in interactive mode, always blocked in print mode): `sudo`, `rm -rf`, `chmod 777`, `dd of=/dev/*`, `mkfs*`, `fdisk`, `parted`, `format`, `shutdown`, `reboot`, `halt`, `poweroff`, `init`, fork bombs
 
@@ -248,13 +248,13 @@ Tool name match takes precedence over mode match (more specific → more general
 | `call`     | MCP tool call mode (default when `tool` is specified) |
 | `action`   | MCP action mode                                       |
 
-| Level       | Default entries                                             | Description                               |
-| ----------- | ----------------------------------------------------------- | ----------------------------------------- |
-| `minimal`   | `search`, `describe`, `list`, `status`, `connect` (modes)   | Read-only MCP modes                       |
-| `low`       | ~45 read-only MCP tools (GitHub read, Atlassian read, etc.) | Read-only MCP tools                       |
-| `medium`    | _(implicit)_                                                | All other MCP tools                       |
-| `high`      | _(implicit — blocked)_                                      | Unknown MCP tools require high permission |
-| `dangerous` | _(none by default)_                                         | Always prompt, even at high level         |
+| Level       | Default entries                                            | Description                               |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------- |
+| `minimal`   | `search`, `describe`, `list`, `status`, `connect` (modes)  | Read-only MCP modes                       |
+| `low`       | 46 read-only MCP tools (GitHub read, Atlassian read, etc.) | Read-only MCP tools                       |
+| `medium`    | _(implicit)_                                               | All other MCP tools                       |
+| `high`      | _(implicit — blocked)_                                     | Unknown MCP tools require high permission |
+| `dangerous` | _(none by default)_                                        | Always prompt, even at high level         |
 
 **Examples:**
 
