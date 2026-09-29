@@ -206,7 +206,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       }
       return {
         block: true,
-        reason: `[pi-permission-layers] Unknown tool "${toolName}" requires High permission`,
+        reason: `[pi-permission-layers] Unknown tool "${toolName}" requires High (or bypassed) permission`,
       };
     }
 

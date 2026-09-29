@@ -17,13 +17,13 @@ A [Pi Coding Agent](https://pi.dev/) extension that implements a layered permiss
 
 ## Levels
 
-| Level | Description | Allowed Operations |
-|-------|-------------|-------------------|
-| `minimal` | Read-only (default) | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc. |
-| `low` | File threshold | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools |
-| `medium` | Development operations | Create/edit files (`mkdir`, `cp`, `mv`, `ln`), `npm install`, builds, tests, `git commit/pull`, linters, package managers |
-| `high` | Full operations | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.) |
-| `bypassed` | All checks disabled | Everything (dangerous — CI/containers only) |
+| Level      | Description            | Allowed Operations                                                                                                        |
+| ---------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `minimal`  | Read-only (default)    | `cat`, `ls`, `grep`, `git status/log/diff`, `npm list`, etc.                                                              |
+| `low`      | File threshold         | Output redirection (`>`, `>>`), `write`/`edit` tool calls, known read-only MCP tools                                      |
+| `medium`   | Development operations | Create/edit files (`mkdir`, `cp`, `mv`, `ln`), `npm install`, builds, tests, `git commit/pull`, linters, package managers |
+| `high`     | Full operations        | `git push`, deployments, `curl`, `docker push`, shell execution (`eval`, `exec`, `source`, `env`, etc.)                   |
+| `bypassed` | All checks disabled    | Everything (dangerous — CI/containers only)                                                                               |
 
 **Dangerous commands** (always require confirmation in interactive mode, always blocked in print mode): `sudo`, `rm -rf`, `chmod 777`, `dd of=/dev/*`, `mkfs*`, `fdisk`, `parted`, `format`, `shutdown`, `reboot`, `halt`, `poweroff`, `init`, fork bombs
 
@@ -52,6 +52,7 @@ pi install https://github.com/gsanhueza/pi-permission-layers
 Interactive mode enables the usage of the following commands:
 
 **Commands:**
+
 - `/permission` — Show selector to change level
 - `/permission medium` — Set level directly (asks session/global)
 - `/permission-mode` — Switch between `ask`/`block` when permission is required
@@ -88,6 +89,7 @@ PI_PERMISSION_LEVEL=bypassed pi -p "do anything"
 
 **If permission is insufficient:**
 The command is blocked but execution continues. The agent receives:
+
 ```
 $ npm install lodash
 Blocked by permission (minimal). Allowed at this level: Read-only
@@ -95,6 +97,7 @@ User can re-run with: PI_PERMISSION_LEVEL=medium pi -p "..."
 ```
 
 **If a dangerous command is used:**
+
 ```
 Dangerous command requires confirmation: sudo rm -rf /tmp/foo
 User can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."
@@ -104,11 +107,11 @@ The agent can then work around the limitation or inform the user.
 
 ## Environment Variables
 
-| Variable | Values | Description |
-|----------|--------|-------------|
-| `PI_PERMISSION_LEVEL` | `minimal`, `low`, `medium`, `high`, `bypassed` | Set permission level |
-| `PI_QUIET` | `1`, `true`, `yes` | Suppress startup notifications |
-| `PI_FORCEUI` | `1`, `true`, `yes` | Force interactive UI mode |
+| Variable              | Values                                         | Description                    |
+| --------------------- | ---------------------------------------------- | ------------------------------ |
+| `PI_PERMISSION_LEVEL` | `minimal`, `low`, `medium`, `high`, `bypassed` | Set permission level           |
+| `PI_QUIET`            | `1`, `true`, `yes`                             | Suppress startup notifications |
+| `PI_FORCEUI`          | `1`, `true`, `yes`                             | Force interactive UI mode      |
 
 ## Settings
 
@@ -151,14 +154,14 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 
 ### `permissionConfig` Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `overrides` | `PermissionOverrides` | `{}` | Per-level glob patterns for shell command overrides |
-| `tools` | `ToolPermissionConfig` | `{}` | Per-level tool name assignments (delta model — only specify what you want to change) |
-| `mcp` | `McpPermissionConfig` | `{}` | Per-level MCP tool/mode name assignments (delta model — only specify what you want to change) |
-| `prefixMappings` | `PermissionPrefixMapping[]` | `[]` | Normalize version-manager commands to their base tools |
-| `quietStartup` | `boolean` | `false` | Suppress the startup notification message |
-| `forceUI` | `boolean` | `false` | Force interactive UI mode regardless of context (e.g., in print mode) |
+| Option                | Type                                           | Default       | Description                                                                                                                                                                                  |
+| --------------------- | ---------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `overrides`           | `PermissionOverrides`                          | `{}`          | Per-level glob patterns for shell command overrides                                                                                                                                          |
+| `tools`               | `ToolPermissionConfig`                         | `{}`          | Per-level tool name assignments (delta model — only specify what you want to change)                                                                                                         |
+| `mcp`                 | `McpPermissionConfig`                          | `{}`          | Per-level MCP tool/mode name assignments (delta model — only specify what you want to change)                                                                                                |
+| `prefixMappings`      | `PermissionPrefixMapping[]`                    | `[]`          | Normalize version-manager commands to their base tools                                                                                                                                       |
+| `quietStartup`        | `boolean`                                      | `false`       | Suppress the startup notification message                                                                                                                                                    |
+| `forceUI`             | `boolean`                                      | `false`       | Force interactive UI mode regardless of context (e.g., in print mode)                                                                                                                        |
 | `systemNotifications` | `"off" \| "on" \| "unfocused" \| "persistent"` | `"unfocused"` | Control OS notifications (`"off"` = fully disabled, `"unfocused"` = only when terminal is not focused, `"on"` = always show, `"persistent"` = always show with critical/persistent priority) |
 
 > **Note on Linux:** Terminal focus detection is not supported on Linux, so the `"unfocused"` option behaves the same as `"on"` (notifications are always shown).
@@ -166,11 +169,13 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 ### Override Patterns
 
 Glob patterns are matched against the full command:
+
 - `*` matches any characters
 - `?` matches single character
 - Patterns are case-insensitive
 
 Override priority (highest to lowest):
+
 1. `dangerous` — Always prompt, even at high level
 2. `high` — Require high permission
 3. `medium` — Require medium permission
@@ -193,14 +198,12 @@ Override priority (highest to lowest):
       "medium": ["tmux attach*", "tmux new*"]
     },
     "tools": {
-      "low": ["read"]  // move read up from minimal to low
+      "low": ["read"] // move read up from minimal to low
     },
     "mcp": {
-      "medium": ["github_create_issue"]  // require medium for this tool
+      "medium": ["github_create_issue"] // require medium for this tool
     },
-    "prefixMappings": [
-      { "from": "fvm flutter", "to": "flutter" }
-    ]
+    "prefixMappings": [{ "from": "fvm flutter", "to": "flutter" }]
   }
 }
 ```
@@ -209,15 +212,16 @@ Override priority (highest to lowest):
 
 Assign permission levels to individual tool names. This uses a **delta/override model**: only specify what you want to change — unmentioned tools keep their default levels.
 
-| Level | Default tools | Description |
-|-------|---------------|-------------|
-| `minimal` | `read`, `ls`, `grep`, `find` | Read-only operations |
-| `low` | `write`, `edit` | File operations |
-| `medium` | *(implicit)* | All other tools (blocked by default) |
-| `high` | *(implicit — blocked)* | Unknown tools require high permission |
-| `dangerous` | *(none by default)* | Always prompt, even at high level |
+| Level       | Default tools                | Description                           |
+| ----------- | ---------------------------- | ------------------------------------- |
+| `minimal`   | `read`, `ls`, `grep`, `find` | Read-only operations                  |
+| `low`       | `write`, `edit`              | File operations                       |
+| `medium`    | _(implicit)_                 | All other tools (blocked by default)  |
+| `high`      | _(implicit — blocked)_       | Unknown tools require high permission |
+| `dangerous` | _(none by default)_          | Always prompt, even at high level     |
 
 **Example:** `{ "minimal": ["read"], "low": ["grep"] }`:
+
 - `read` → minimal (explicit override)
 - `grep` → low (explicit override, moves up from default minimal)
 - `ls`, `find` → minimal (defaults preserved — not mentioned in config)
@@ -228,46 +232,48 @@ Assign permission levels to individual tool names. This uses a **delta/override 
 ### MCP Permission Config (`mcp`)
 
 Assign permission levels to MCP tools and modes. MCP config supports two types of entries:
+
 - **Mode names** (`search`, `describe`, `list`, `status`, `connect`, `call`, `action`) — match against the call's mode
 - **Tool names** (`serper_search`, `github_list_commits`) — match against the specific tool
 
 Tool name match takes precedence over mode match (more specific → more general).
 
-| Mode | Description |
-|------|-------------|
-| `search` | MCP search mode |
-| `describe` | MCP describe mode |
-| `list` | MCP list mode (server listing) |
-| `status` | MCP status mode |
-| `connect` | MCP connect mode |
-| `call` | MCP tool call mode (default when `tool` is specified) |
-| `action` | MCP action mode |
+| Mode       | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `search`   | MCP search mode                                       |
+| `describe` | MCP describe mode                                     |
+| `list`     | MCP list mode (server listing)                        |
+| `status`   | MCP status mode                                       |
+| `connect`  | MCP connect mode                                      |
+| `call`     | MCP tool call mode (default when `tool` is specified) |
+| `action`   | MCP action mode                                       |
 
-| Level | Default entries | Description |
-|-------|-----------------|-------------|
-| `minimal` | `search`, `describe`, `list`, `status`, `connect` (modes) | Read-only MCP modes |
-| `low` | ~45 read-only MCP tools (GitHub read, Atlassian read, etc.) | Read-only MCP tools |
-| `medium` | *(implicit)* | All other MCP tools |
-| `high` | *(implicit — blocked)* | Unknown MCP tools require high permission |
-| `dangerous` | *(none by default)* | Always prompt, even at high level |
+| Level       | Default entries                                             | Description                               |
+| ----------- | ----------------------------------------------------------- | ----------------------------------------- |
+| `minimal`   | `search`, `describe`, `list`, `status`, `connect` (modes)   | Read-only MCP modes                       |
+| `low`       | ~45 read-only MCP tools (GitHub read, Atlassian read, etc.) | Read-only MCP tools                       |
+| `medium`    | _(implicit)_                                                | All other MCP tools                       |
+| `high`      | _(implicit — blocked)_                                      | Unknown MCP tools require high permission |
+| `dangerous` | _(none by default)_                                         | Always prompt, even at high level         |
 
 **Examples:**
+
 ```json
 {
   "overrides": {
     "minimal": [
-      "tmux list-*",      // tmux list-sessions, tmux list-windows, etc.
-      "tmux show-*",      // tmux show-options, tmux show-messages, etc.
-      "screen -list"      // List screen sessions
+      "tmux list-*", // tmux list-sessions, tmux list-windows, etc.
+      "tmux show-*", // tmux show-options, tmux show-messages, etc.
+      "screen -list" // List screen sessions
     ],
     "medium": [
-      "tmux attach*",     // Attach to sessions
-      "tmux new*",        // Create new sessions
-      "screen -r *"       // Reattach to screen
+      "tmux attach*", // Attach to sessions
+      "tmux new*", // Create new sessions
+      "screen -r *" // Reattach to screen
     ],
     "high": [
-      "rm -rf *",         // Force rm with any arguments
-      "dd of=/dev/*"      // dd writing to any device
+      "rm -rf *", // Force rm with any arguments
+      "dd of=/dev/*" // dd writing to any device
     ],
     "dangerous": [
       "dd if=* of=/dev/*" // dd writing to device from any source
@@ -279,11 +285,13 @@ Tool name match takes precedence over mode match (more specific → more general
 ### Prefix Mappings
 
 Normalize version manager commands to their base tools:
+
 - `fvm flutter build` → treated as `flutter build` (classified normally)
 - `nvm exec node` → treated as `node` (classified normally)
 - `rbenv exec ruby` → treated as `ruby` (classified normally)
 
 **How it works:**
+
 1. Commands are checked against prefix mappings first
 2. If a prefix matches, it's replaced with the mapped value
 3. The normalized command is then classified

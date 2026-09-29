@@ -34,11 +34,16 @@ export const classifyAndCheck = (
   classification: Classification | null,
 ): ClassifyAndCheckResult => {
   if (!classification) {
-    return {
-      blocked: true,
-      reason: `[pi-permission-layers] Unknown tool requires High permission`,
-      classification: null,
-    };
+    // Unknown tool — only block if below high level
+    if (LEVEL_INDEX[state.currentLevel] < LEVEL_INDEX["high"]) {
+      return {
+        blocked: true,
+        reason: `[pi-permission-layers] Unknown tool requires High permission`,
+        classification: null,
+      };
+    }
+    // At high/bypassed → allow unknown tools (trust the user)
+    return { blocked: false, classification: null };
   }
 
   if (classification.dangerous) {

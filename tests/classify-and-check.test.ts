@@ -38,15 +38,23 @@ describe("classifyAndCheck: null classification (unknown tool)", () => {
     const result = classifyAndCheck(state, null);
 
     expect(result.blocked).toBe(true);
-    expect(result.reason).toContain("Unknown tool");
+    expect(result.reason).toContain("High");
     expect(result.classification).toBeNull();
   });
 
-  test("blocks even at high level", () => {
+  test("allows unknown tool at high level", () => {
     const state = makeState({ currentLevel: "high" });
     const result = classifyAndCheck(state, null);
 
-    expect(result.blocked).toBe(true);
+    expect(result.blocked).toBe(false);
+    expect(result.classification).toBeNull();
+  });
+
+  test("allows unknown tool at bypassed level", () => {
+    const state = makeState({ currentLevel: "bypassed" });
+    const result = classifyAndCheck(state, null);
+
+    expect(result.blocked).toBe(false);
     expect(result.classification).toBeNull();
   });
 });
