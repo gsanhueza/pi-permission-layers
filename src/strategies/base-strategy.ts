@@ -204,13 +204,12 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       if (result.reason === "dangerous") {
         return this.onDangerous(toolName, ctx);
       }
-      return {
-        block: true,
-        reason: `[pi-permission-layers] Unknown tool "${toolName}" requires High (or bypassed) permission`,
-      };
+      // Unknown tool below high level — prompt to allow upgrade
+      return this.onRequest("high", message, details, ctx);
     }
 
-    return this.onRequest(result.classification!.level, message, details, ctx);
+    const level = result.classification?.level ?? "high";
+    return this.onRequest(level, message, details, ctx);
   }
 
   // ── Command handlers ─────────────────────────────────────────────
