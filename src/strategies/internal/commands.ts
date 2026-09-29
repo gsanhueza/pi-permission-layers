@@ -84,7 +84,6 @@ Edit ~/.pi/agent/settings.json directly for full control:
       { "from": "pyenv exec", "to": "" }
     ],
     "quietStartup": true,
-    "forceUI": true,
     "systemNotifications": "unfocused"
   }
 }`;

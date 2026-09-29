@@ -36,7 +36,6 @@ describe("handleConfigSubcommand: config show", () => {
     expect(ctx.calls[0].level).toBe("info");
     expect(ctx.calls[0].message).toContain("Permission Config:");
     expect(ctx.calls[0].message).toContain("quietStartup");
-    expect(ctx.calls[0].message).toContain("forceUI");
     expect(ctx.calls[0].message).toContain("systemNotifications");
   });
 

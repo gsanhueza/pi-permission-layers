@@ -16,8 +16,6 @@ export interface PermissionConfig {
   mcp?: McpPermissionConfig;
   /** Hide startup usage help */
   quietStartup?: boolean;
-  /** Force interactive UI mode regardless of context */
-  forceUI?: boolean;
   /** System notifications */
   systemNotifications?: Notification;
 }

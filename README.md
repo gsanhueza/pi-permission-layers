@@ -59,7 +59,7 @@ Interactive mode enables the usage of the following commands:
 - `/permission-mode block` — Block instead of prompting
 - `/permission config show` — Display current configuration
 - `/permission config reset` — Reset to default (empty)
-- `/permission settings` — Interactive UI to toggle `quietStartup` / `forceUI` / `systemNotifications`
+- `/permission settings` — Interactive UI to toggle `quietStartup` / `systemNotifications`
 
 **Autocomplete:** All commands support argument autocomplete. After typing the command name, press **Space** to see available values. Nested subcommands also autocomplete — e.g. `/permission config <space>` shows `show`/`reset`.
 
@@ -111,7 +111,6 @@ The agent can then work around the limitation or inform the user.
 | --------------------- | ---------------------------------------------- | ------------------------------ |
 | `PI_PERMISSION_LEVEL` | `minimal`, `low`, `medium`, `high`, `bypassed` | Set permission level           |
 | `PI_QUIET`            | `1`, `true`, `yes`                             | Suppress startup notifications |
-| `PI_FORCEUI`          | `1`, `true`, `yes`                             | Force interactive UI mode      |
 
 ## Settings
 
@@ -144,7 +143,6 @@ Global settings are stored in `~/.pi/agent/settings.json`:
       { "from": "pyenv exec", "to": "" }
     ],
     "quietStartup": true,
-    "forceUI": true,
     "systemNotifications": "unfocused"
   }
 }
@@ -161,7 +159,6 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 | `mcp`                 | `McpPermissionConfig`                          | `{}`          | Per-level MCP tool/mode name assignments (delta model — only specify what you want to change)                                                                                                |
 | `prefixMappings`      | `PermissionPrefixMapping[]`                    | `[]`          | Normalize version-manager commands to their base tools                                                                                                                                       |
 | `quietStartup`        | `boolean`                                      | `false`       | Suppress the startup notification message                                                                                                                                                    |
-| `forceUI`             | `boolean`                                      | `false`       | Force interactive UI mode regardless of context (e.g., in print mode)                                                                                                                        |
 | `systemNotifications` | `"off" \| "on" \| "unfocused" \| "persistent"` | `"unfocused"` | Control OS notifications (`"off"` = fully disabled, `"unfocused"` = only when terminal is not focused, `"on"` = always show, `"persistent"` = always show with critical/persistent priority) |
 
 > **Note on Linux:** Terminal focus detection is not supported on Linux, so the `"unfocused"` option behaves the same as `"on"` (notifications are always shown).

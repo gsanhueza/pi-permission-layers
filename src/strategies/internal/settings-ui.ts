@@ -23,13 +23,6 @@ export const createSettingsList = (done: () => void): SettingsList => {
       values: ["on", "off"],
     },
     {
-      id: "force-ui",
-      label: "Force UI",
-      description: "Always use interactive UI even in non-interactive mode",
-      currentValue: config.forceUI ? "on" : "off",
-      values: ["on", "off"],
-    },
-    {
       id: "system-notifications",
       label: "System notifications",
       description: "Control OS notification behavior",
@@ -45,7 +38,6 @@ export const createSettingsList = (done: () => void): SettingsList => {
     (id, newValue) => {
       const cfg = loadPermissionConfig();
       if (id === "quiet-startup") cfg.quietStartup = newValue === "on";
-      if (id === "force-ui") cfg.forceUI = newValue === "on";
       if (id === "system-notifications")
         cfg.systemNotifications = newValue as Notification;
       savePermissionConfig(cfg);

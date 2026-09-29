@@ -51,7 +51,6 @@ export class SettingsManager {
     const tools = this.validateToolConfig(raw.tools);
     const mcp = this.validateMcpConfig(raw.mcp);
     const quietStartup = this.validateQuietStartup(raw);
-    const forceUI = this.validateForceUI(raw);
     const systemNotifications = this.validateSystemNotifications(raw);
 
     // Only return what we know is not default
@@ -62,7 +61,6 @@ export class SettingsManager {
     if (tools) response.tools = tools;
     if (mcp) response.mcp = mcp;
     if (quietStartup !== undefined) response.quietStartup = quietStartup;
-    if (forceUI !== undefined) response.forceUI = forceUI;
     if (systemNotifications !== undefined)
       response.systemNotifications = systemNotifications;
 
@@ -175,10 +173,6 @@ export class SettingsManager {
 
   private validateQuietStartup(raw: PermissionConfig): boolean | undefined {
     return raw.quietStartup;
-  }
-
-  private validateForceUI(raw: PermissionConfig): boolean | undefined {
-    return raw.forceUI;
   }
 
   private validateSystemNotifications(

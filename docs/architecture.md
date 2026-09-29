@@ -123,14 +123,12 @@ Shared code internal to the strategy module. Not a public API.
 - `mcp-input.ts` — MCP input parsing: `parseMcpInput()` parses MCP tool call input, delegates to `resolveMcpLevel()` for config-based classification
 - `commands.ts` — `handleConfigSubcommand()` (config show/reset/help), `notify()` (unified notification helper)
 - `events.ts` — `initializeSessionState()` (loads env var or global settings)
-- `settings-ui.ts` — `createSettingsList()` — renders an interactive TUI `SettingsList` for toggling `quietStartup`, `forceUI`, and `systemNotifications`
+- `settings-ui.ts` — `createSettingsList()` — renders an interactive TUI `SettingsList` for toggling `quietStartup` and `systemNotifications`
 - `ui-rendering.ts` — `getStatusText()`, `isQuietMode()`, `notifySystem()`, terminal bundle ID detection (macOS: Ghostty, iTerm2, Kitty, Alacritty, Warp, Apple Terminal, VS Code), tmux awareness
 - `ui-detection.ts` — `hasInteractiveUI(ctx)` — detects interactive context:
-  1. `PI_FORCEUI` env var override (`1`, `true`, `yes`)
-  2. `forceUI` setting in `permissionConfig`
-  3. `ctx.hasUI` from the agent context
-  4. `--mode` flag from argv (via `--mode=` or `--mode <value>`)
-  5. Returns `true` if any of the above indicate interactivity
+  1. `ctx.hasUI` from the agent context (pi's reliable signal)
+  2. `--mode` flag from argv (via `--mode=` or `--mode <value>`) — print mode disables UI
+  3. Returns `true` if pi says UI is available and mode isn't print
 
 ### `index.ts` — Entry Point
 
@@ -323,7 +321,7 @@ The strategy contract that both UI and no-UI implementations share:
 
 ### `core/interfaces.ts` — Other Interface Definitions
 
-- `PermissionConfig` — Overrides (per-level glob patterns), prefix mappings, tools (per-tool permission levels), mcp (per-MCP permission levels), quietStartup, forceUI, systemNotifications
+- `PermissionConfig` — Overrides (per-level glob patterns), prefix mappings, tools (per-tool permission levels), mcp (per-MCP permission levels), quietStartup, systemNotifications
 - `PermissionOverrides` — Per-level override arrays: `{ minimal?, low?, medium?, high?, dangerous? }`
 - `PermissionPrefixMapping` — `{ from: string, to: string }` for normalizing version-manager commands
 - `ToolPermissionConfig` — Per-level tool name assignments: `{ minimal?, low?, medium?, high?, dangerous? }`
