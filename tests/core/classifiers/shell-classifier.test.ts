@@ -4,19 +4,16 @@
  * Run with: npm test
  */
 
-import { describe, expect, test, vi } from "vitest";
-import { getSettingsMock } from "../../fixtures/helpers";
+import { describe, expect, test } from "vitest";
 import { classifyCommand } from "../../../src/core/classifiers/shell-classifier";
-import { PermissionConfig } from "../../../src/core/interfaces";
-
-vi.mock("../../../src/core/settings", () => getSettingsMock());
+import type { PermissionConfig } from "../../../src/core/interfaces";
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
 const assertLevel = (cmd: string, expected: string, dangerous = false) => {
-  const result = classifyCommand(cmd);
+  const result = classifyCommand(cmd, { prefixMappings: [], overrides: {} });
   expect(result.level).toBe(expected);
   expect(result.dangerous).toBe(dangerous);
 };

@@ -8,6 +8,7 @@ import {
   loadPermissionConfig,
   savePermissionConfig,
 } from "../../core/settings";
+import type { PermissionConfig } from "../../core/interfaces";
 
 // ============================================================================
 // NOTIFICATION HELPER
@@ -34,20 +35,29 @@ export const handleConfigSubcommand = async (
   args: string,
   ctx: ExtensionCommandContext,
   prefix = "",
+  deps: {
+    loadPermissionConfig: () => PermissionConfig;
+    savePermissionConfig: (config: PermissionConfig) => void;
+    invalidateConfigCache: () => void;
+  } = {
+    loadPermissionConfig,
+    savePermissionConfig,
+    invalidateConfigCache,
+  },
 ): Promise<void> => {
   const parts = args.trim().split(/\s+/);
   const action = parts[0];
 
   if (action === "show") {
-    const config = loadPermissionConfig();
+    const config = deps.loadPermissionConfig();
     const configStr = JSON.stringify(config, null, 2);
     notify(ctx, `Permission Config:\n${configStr}`, "info", prefix);
     return;
   }
 
   if (action === "reset") {
-    savePermissionConfig({});
-    invalidateConfigCache();
+    deps.savePermissionConfig({});
+    deps.invalidateConfigCache();
     notify(ctx, "Permission config reset to defaults", "info", prefix);
     return;
   }

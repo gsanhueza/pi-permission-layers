@@ -9,7 +9,7 @@ import {
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
 } from "../core/types";
-import { BasePermissionStrategy } from "./base-strategy";
+import { BasePermissionStrategy, type BaseStrategyDeps } from "./base-strategy";
 import { notify } from "./internal/commands";
 import { checkPermission } from "./internal/permission-check";
 import { createSettingsList } from "./internal/settings-ui";
@@ -23,6 +23,10 @@ import {
  * UI strategy — uses prompts, status bar, and system notifications.
  */
 export class UIPermissionStrategy extends BasePermissionStrategy {
+  constructor(deps?: BaseStrategyDeps) {
+    super(deps);
+  }
+
   // ── State ────────────────────────────────────────────────────────
 
   override setLevel(

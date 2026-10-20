@@ -5,23 +5,27 @@
  */
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getSettingsMock, makeSimpleNotifyCtx } from "../fixtures/helpers";
+import { makeSimpleNotifyCtx } from "../fixtures/helpers";
+import { handleConfigSubcommand } from "../../src/strategies/internal/commands";
+import { SettingsManager } from "../../src/core/manager";
 
 const makeCtx = makeSimpleNotifyCtx;
 
-vi.mock("../../src/core/settings", () =>
-  getSettingsMock({ savePermissionConfig: vi.fn() }),
-);
-vi.mock("../../src/core/config", () => ({
-  invalidateConfigCache: vi.fn(),
-}));
+// Mock for assertions
+const savePermissionConfig = vi.fn();
 
-import { handleConfigSubcommand } from "../../src/strategies/internal/commands";
-import { SettingsManager } from "../../src/core/manager";
-import { savePermissionConfig } from "../../src/core/settings";
+const mockSettings = require("../fixtures/mock-settings.json");
+
+const configDeps = {
+  loadPermissionConfig: () =>
+    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
+  savePermissionConfig,
+  invalidateConfigCache: () => {},
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
+  savePermissionConfig.mockReset();
 });
 
 // ============================================================================
@@ -32,7 +36,7 @@ describe("handleConfigSubcommand: config show", () => {
   test("calls notify with config content", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("show", ctx as never);
+    await handleConfigSubcommand("show", ctx as never, "", configDeps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -42,9 +46,10 @@ describe("handleConfigSubcommand: config show", () => {
   });
 
   test("calls notify with empty config when none set", async () => {
+    const deps = { ...configDeps, loadPermissionConfig: () => ({}) };
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("show", ctx as never);
+    await handleConfigSubcommand("show", ctx as never, "", deps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].message).toContain("Permission Config:");
@@ -59,7 +64,7 @@ describe("handleConfigSubcommand: config reset", () => {
   test("calls notify with reset confirmation", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("reset", ctx as never);
+    await handleConfigSubcommand("reset", ctx as never, "", configDeps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -69,7 +74,7 @@ describe("handleConfigSubcommand: config reset", () => {
   test("calls savePermissionConfig with empty object", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("reset", ctx as never);
+    await handleConfigSubcommand("reset", ctx as never, "", configDeps);
 
     expect(savePermissionConfig).toHaveBeenCalledWith({});
   });
@@ -83,7 +88,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("unknown action shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("foobar", ctx as never);
+    await handleConfigSubcommand("foobar", ctx as never, "", configDeps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -97,7 +102,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("empty args shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("", ctx as never);
+    await handleConfigSubcommand("", ctx as never, "", configDeps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -109,7 +114,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("whitespace-only args shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("   ", ctx as never);
+    await handleConfigSubcommand("   ", ctx as never, "", configDeps);
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -118,6 +123,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
     );
   });
 });
+
 describe("config validation: SettingsManager handles tools/mcp", () => {
   test("tools config is validated", () => {
     const manager = new SettingsManager("/tmp/test-settings.json");

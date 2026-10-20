@@ -9,27 +9,30 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   getPiCodingAgentMock,
-  getSettingsMock,
   makeCtx,
   resetStrategyState,
 } from "../fixtures/helpers";
-
-vi.mock("../../src/core/settings", () =>
-  getSettingsMock({
-    loadGlobalPermissionLevel: () => null,
-    loadGlobalPermissionMode: () => null,
-    saveGlobalPermissionLevel: () => {},
-    saveGlobalPermissionMode: () => {},
-  }),
-);
+import { settingsMock } from "../mocks/settings";
 
 vi.mock("@earendil-works/pi-coding-agent", () => getPiCodingAgentMock());
 
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { BaseStrategyDeps } from "../../src/strategies/base-strategy";
 import { CANCEL } from "../fixtures/helpers";
 import type { NotifyCall, SelectCall } from "../fixtures/helpers";
 import { NoUIPermissionStrategy } from "../../src/strategies/no-ui-strategy";
 import { UIPermissionStrategy } from "../../src/strategies/ui-strategy";
+
+// Helper to create deps for strategy tests
+const createDeps = (
+  overrides?: Partial<BaseStrategyDeps>,
+): BaseStrategyDeps => ({
+  getCachedConfig: () =>
+    (settingsMock.loadPermissionConfig as () => Record<string, unknown>)(),
+  saveGlobalPermissionLevel: () => {},
+  saveGlobalPermissionMode: () => {},
+  ...overrides,
+});
 
 // Extended context type for hook tests
 interface TestCommandContext extends ExtensionCommandContext {
@@ -41,8 +44,8 @@ interface TestCommandContext extends ExtensionCommandContext {
 // Strategy instances (shared across tests)
 // ============================================================================
 
-const uiStrategy = new UIPermissionStrategy();
-const noUIStrategy = new NoUIPermissionStrategy();
+const uiStrategy = new UIPermissionStrategy(createDeps());
+const noUIStrategy = new NoUIPermissionStrategy(createDeps());
 
 beforeEach(() => {
   resetStrategyState(uiStrategy);
@@ -598,7 +601,7 @@ describe("block mode: MCP calls blocked", () => {
 
 describe("UIPermissionStrategy: onViewLevel", () => {
   test("calls ctx.ui.select with level options", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx() as unknown as TestCommandContext;
 
     await (strategy as any).onViewLevel(ctx);
@@ -614,7 +617,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
   });
 
   test("selecting a level updates state", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     // First select: "Low: File ops only"
     // Second select: "Session only"
     const ctx = makeCtx("Session only");
@@ -635,7 +638,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
   });
 
   test("selecting a level with global save", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Global (persists)");
     let callCount = 0;
     ctx.ui.select = async (_message: string, options: string[]) => {
@@ -654,7 +657,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
   });
 
   test("canceling first select does nothing", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Cancel");
 
     await (strategy as any).onViewLevel(ctx as unknown as TestCommandContext);
@@ -663,7 +666,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
   });
 
   test("canceling second select does nothing", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Cancel");
     let callCount = 0;
     ctx.ui.select = async (_message: string, options: string[]) => {
@@ -687,7 +690,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
 
 describe("UIPermissionStrategy: onSetLevel", () => {
   test("calls ctx.ui.select for scope", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Session only") as unknown as TestCommandContext;
 
     await (strategy as any).onSetLevel("high", ctx);
@@ -699,7 +702,7 @@ describe("UIPermissionStrategy: onSetLevel", () => {
   });
 
   test("session-only scope sets isSessionOnly: true", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Session only") as unknown as TestCommandContext;
 
     await (strategy as any).onSetLevel("high", ctx);
@@ -709,7 +712,7 @@ describe("UIPermissionStrategy: onSetLevel", () => {
   });
 
   test("global scope sets isSessionOnly: false", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Global (persists)") as unknown as TestCommandContext;
 
     await (strategy as any).onSetLevel("medium", ctx);
@@ -719,7 +722,7 @@ describe("UIPermissionStrategy: onSetLevel", () => {
   });
 
   test("canceling scope selection does nothing", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx(CANCEL) as unknown as TestCommandContext;
 
     await (strategy as any).onSetLevel("high", ctx);
@@ -735,7 +738,7 @@ describe("UIPermissionStrategy: onSetLevel", () => {
 
 describe("UIPermissionStrategy: onViewMode", () => {
   test("calls ctx.ui.select with mode options", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx() as unknown as TestCommandContext;
 
     await (strategy as any).onViewMode(ctx);
@@ -750,7 +753,7 @@ describe("UIPermissionStrategy: onViewMode", () => {
   });
 
   test("selecting a mode updates state", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Session only");
     let callCount = 0;
     ctx.ui.select = async (_message: string, options: string[]) => {
@@ -774,7 +777,7 @@ describe("UIPermissionStrategy: onViewMode", () => {
 
 describe("UIPermissionStrategy: onSetMode", () => {
   test("calls ctx.ui.select for scope", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Session only") as unknown as TestCommandContext;
 
     await (strategy as any).onSetMode("block", ctx);
@@ -786,7 +789,7 @@ describe("UIPermissionStrategy: onSetMode", () => {
   });
 
   test("session-only scope sets isModeSessionOnly: true", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Session only") as unknown as TestCommandContext;
 
     await (strategy as any).onSetMode("block", ctx);
@@ -796,7 +799,7 @@ describe("UIPermissionStrategy: onSetMode", () => {
   });
 
   test("global scope sets isModeSessionOnly: false", async () => {
-    const strategy = new UIPermissionStrategy();
+    const strategy = new UIPermissionStrategy(createDeps());
     const ctx = makeCtx("Global (persists)") as unknown as TestCommandContext;
 
     await (strategy as any).onSetMode("ask", ctx);

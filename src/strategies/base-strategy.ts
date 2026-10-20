@@ -6,7 +6,11 @@ import {
 import { classifyCommand } from "../core/classifiers/shell-classifier";
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
 import { getCachedConfig } from "../core/config";
-import type { Classification, PermissionState } from "../core/interfaces";
+import type {
+  Classification,
+  PermissionState,
+  PermissionConfig,
+} from "../core/interfaces";
 import {
   saveGlobalPermissionLevel,
   saveGlobalPermissionMode,
@@ -21,14 +25,29 @@ import { parseMcpInput } from "./internal/mcp-input";
 import { classifyAndCheck } from "./internal/tool-permission";
 
 /**
+ * Dependencies for the base strategy.
+ */
+export interface BaseStrategyDeps {
+  getCachedConfig: () => PermissionConfig;
+  saveGlobalPermissionLevel: (level: PermissionLevel) => void;
+  saveGlobalPermissionMode: (mode: PermissionMode) => void;
+}
+
+/**
  * Abstract base class that owns the shared permission algorithm.
  *
  * Concrete strategies only implement the abstract presentation hooks.
  */
 export abstract class BasePermissionStrategy implements PermissionStrategy {
   public readonly state: PermissionState;
+  protected readonly deps: BaseStrategyDeps;
 
-  constructor() {
+  constructor(deps?: BaseStrategyDeps) {
+    this.deps = deps ?? {
+      getCachedConfig,
+      saveGlobalPermissionLevel,
+      saveGlobalPermissionMode,
+    };
     this.state = this.createInitialState();
   }
 
@@ -54,7 +73,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     this.state.currentLevel = level;
     this.state.isSessionOnly = !saveGlobally;
     if (saveGlobally) {
-      saveGlobalPermissionLevel(level);
+      this.deps.saveGlobalPermissionLevel(level);
     }
   }
 
@@ -62,7 +81,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     this.state.permissionMode = mode;
     this.state.isModeSessionOnly = !saveGlobally;
     if (saveGlobally) {
-      saveGlobalPermissionMode(mode);
+      this.deps.saveGlobalPermissionMode(mode);
     }
   }
 
@@ -118,7 +137,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     input: McpToolInput,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    const config = getCachedConfig();
+    const config = this.deps.getCachedConfig();
     const { targetTool, requiredLevel, dangerous } = parseMcpInput(
       input,
       config.mcp,
@@ -148,7 +167,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): Promise<{ block: true; reason: string } | undefined> {
     if (this.state.currentLevel === "bypassed") return undefined;
 
-    const config = getCachedConfig();
+    const config = this.deps.getCachedConfig();
     const classification = resolveToolLevel(toolName, config.tools);
     const action = toolName === "write" ? "Write" : "Edit";
 
@@ -179,7 +198,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     }
 
     // Fallback: all other tools (read, ls, grep, find, unknown)
-    const config = getCachedConfig();
+    const config = this.deps.getCachedConfig();
     const classification = resolveToolLevel(event.toolName, config.tools);
 
     return this.checkAndHandleTool(

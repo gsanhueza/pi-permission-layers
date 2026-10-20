@@ -3,10 +3,8 @@
  *
  * Run with: npm test
  */
-import { describe, expect, test, vi } from "vitest";
-import { getSettingsMock, withArgv } from "../../fixtures/helpers";
-
-vi.mock("../../src/core/settings", () => getSettingsMock());
+import { describe, expect, test } from "vitest";
+import { withArgv } from "../../fixtures/helpers";
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { hasInteractiveUI } from "../../../src/strategies/internal/ui-detection";

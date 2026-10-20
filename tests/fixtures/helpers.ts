@@ -51,6 +51,7 @@ export function getPiCodingAgentMock(): Record<string, unknown> {
     ExtensionContext: {},
     ExtensionCommandContext: {},
     ToolCallEvent: {},
+    getAgentDir: () => "/tmp/pi-agent",
   };
 }
 

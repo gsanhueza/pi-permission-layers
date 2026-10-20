@@ -4,7 +4,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVEL_INFO, PERMISSION_MODE_INFO } from "../core/types";
-import { BasePermissionStrategy } from "./base-strategy";
+import { BasePermissionStrategy, type BaseStrategyDeps } from "./base-strategy";
 import { notify } from "./internal/commands";
 import { checkPermission } from "./internal/permission-check";
 
@@ -14,6 +14,10 @@ const PREFIX = "[pi-permission-layers] ";
  * No-UI strategy — returns block messages, no prompts or status bar.
  */
 export class NoUIPermissionStrategy extends BasePermissionStrategy {
+  constructor(deps?: BaseStrategyDeps) {
+    super(deps);
+  }
+
   // ── State ────────────────────────────────────────────────────────
 
   override setLevel(
@@ -24,6 +28,12 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
     // No-UI always session-only
     this.state.currentLevel = level;
     this.state.isSessionOnly = true;
+  }
+
+  override setMode(mode: PermissionMode, _saveGlobally: boolean): void {
+    // No-UI always session-only
+    this.state.permissionMode = mode;
+    this.state.isModeSessionOnly = true;
   }
 
   // ── Presentation hooks ───────────────────────────────────────────
