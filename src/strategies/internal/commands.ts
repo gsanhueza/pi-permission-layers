@@ -2,13 +2,12 @@
  * Shared command logic used by both UI and no-UI handlers.
  */
 
-import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { invalidateConfigCache } from "../../core/config";
 import {
-  loadPermissionConfig,
-  savePermissionConfig,
-} from "../../core/settings";
-import type { PermissionConfig } from "../../core/interfaces";
+  ExtensionCommandContext,
+  getAgentDir,
+} from "@earendil-works/pi-coding-agent";
+import { invalidateConfigCache } from "../../core/config";
+import { SettingsService } from "../../core/settings";
 
 // ============================================================================
 // NOTIFICATION HELPER
@@ -36,12 +35,10 @@ export const handleConfigSubcommand = async (
   ctx: ExtensionCommandContext,
   prefix = "",
   deps: {
-    loadPermissionConfig: () => PermissionConfig;
-    savePermissionConfig: (config: PermissionConfig) => void;
+    settingsService: SettingsService;
     invalidateConfigCache: () => void;
   } = {
-    loadPermissionConfig,
-    savePermissionConfig,
+    settingsService: new SettingsService(getAgentDir()),
     invalidateConfigCache,
   },
 ): Promise<void> => {
@@ -49,14 +46,14 @@ export const handleConfigSubcommand = async (
   const action = parts[0];
 
   if (action === "show") {
-    const config = deps.loadPermissionConfig();
+    const config = deps.settingsService.loadPermissionConfig();
     const configStr = JSON.stringify(config, null, 2);
     notify(ctx, `Permission Config:\n${configStr}`, "info", prefix);
     return;
   }
 
   if (action === "reset") {
-    deps.savePermissionConfig({});
+    deps.settingsService.savePermissionConfig({});
     deps.invalidateConfigCache();
     notify(ctx, "Permission config reset to defaults", "info", prefix);
     return;

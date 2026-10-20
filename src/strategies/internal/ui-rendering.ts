@@ -1,6 +1,6 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { execFile } from "node:child_process";
-import { getCachedConfig } from "../../core/config";
+import { SettingsService } from "../../core/settings";
 import type { PermissionLevel } from "../../core/types";
 import { LEVEL_INFO } from "../../core/types";
 
@@ -34,19 +34,18 @@ export const getStatusText = (level: PermissionLevel): string => {
 // MODE DETECTION
 // ============================================================================
 
-export const isQuietMode = (_ctx: ExtensionContext): boolean => {
+export const isQuietMode = (
+  _ctx: ExtensionContext,
+  settingsService: SettingsService,
+): boolean => {
   const envQuiet = process.env.PI_QUIET?.toLowerCase();
   if (envQuiet && ["1", "true", "yes"].includes(envQuiet)) return true;
 
   if (process.argv.includes("--quiet") || process.argv.includes("-q"))
     return true;
 
-  return isQuietStartupFromSettings();
-};
-
-const isQuietStartupFromSettings = (): boolean => {
-  const settings = getCachedConfig();
-  return settings.quietStartup === true;
+  const config = settingsService.loadPermissionConfig();
+  return config.quietStartup === true;
 };
 
 // ============================================================================
@@ -134,8 +133,15 @@ const isTerminalFocused = async (): Promise<boolean> => {
 export const notifySystem = async (
   title: string,
   message: string,
+  settingsService: SettingsService,
+  execFileFn: (
+    file: string,
+    args: readonly string[],
+    cb: (err: Error | null, stdout: string, stderr: string) => void,
+  ) => void,
 ): Promise<void> => {
-  const config = getCachedConfig();
+  const fn = execFileFn;
+  const config = settingsService.loadPermissionConfig();
   const focused = await isTerminalFocused();
 
   if (config.systemNotifications === "off") return;
@@ -147,14 +153,14 @@ export const notifySystem = async (
       const tnArgs = ["-title", title, "-message", message];
       if (bundleId) tnArgs.push("-activate", bundleId);
 
-      execFile("terminal-notifier", tnArgs, () => {});
+      fn("terminal-notifier", tnArgs, () => {});
     } else if (process.platform === "linux") {
       const args = ["-a", "pi-permission-layers", title, message];
 
       if (config.systemNotifications === "persistent")
         args.push("-u", "critical");
 
-      execFile("notify-send", args);
+      fn("notify-send", args, () => {});
     }
   } catch {
     // Silently fail if notifications unavailable

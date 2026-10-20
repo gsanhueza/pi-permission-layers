@@ -38,18 +38,28 @@ import {
   ExtensionContext,
   SessionStartEvent,
   ToolCallEvent,
+  getAgentDir,
 } from "@earendil-works/pi-coding-agent";
 import {
   getPermissionCompletions,
   getPermissionModeCompletions,
 } from "./autocomplete";
+import { execFile } from "node:child_process";
 import { PermissionStrategy } from "./strategies/interfaces";
+import { SettingsService } from "./core/settings";
 import { hasInteractiveUI } from "./strategies/internal/ui-detection";
 import { NoUIPermissionStrategy } from "./strategies/no-ui-strategy";
 import { UIPermissionStrategy } from "./strategies/ui-strategy";
+import { getCachedConfig } from "./core/config";
 
 export default (pi: ExtensionAPI) => {
-  let strategy: PermissionStrategy = new NoUIPermissionStrategy();
+  const settingsService = new SettingsService(getAgentDir());
+  const getCachedConfigFn = (s: SettingsService) => getCachedConfig(s);
+  let strategy: PermissionStrategy = new NoUIPermissionStrategy(
+    getCachedConfigFn,
+    settingsService,
+    execFile,
+  );
 
   pi.registerCommand("permission", {
     description: "View or change permission level",
@@ -68,7 +78,12 @@ export default (pi: ExtensionAPI) => {
   pi.on(
     "session_start",
     async (_event: SessionStartEvent, ctx: ExtensionContext) => {
-      if (hasInteractiveUI(ctx)) strategy = new UIPermissionStrategy();
+      if (hasInteractiveUI(ctx))
+        strategy = new UIPermissionStrategy(
+          getCachedConfigFn,
+          settingsService,
+          execFile,
+        );
 
       strategy.handleSessionStart(ctx);
     },

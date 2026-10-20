@@ -3,11 +3,9 @@
  */
 
 import { parse } from "shell-quote";
-import {
-  applyPrefixMappings,
-  checkOverrides,
-  getCachedConfig,
-} from "../config";
+import { applyPrefixMappings, checkOverrides } from "../config";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import { SettingsService } from "../settings";
 import {
   ALL_REDIRECTION_OPS,
   COMMAND_SEPARATORS,
@@ -232,11 +230,16 @@ const classifySegment = (tokens: string[]): Classification => {
 // PUBLIC CLASSIFY COMMAND
 // ============================================================================
 
+const defaultSettingsService = new SettingsService(getAgentDir());
+
 export const classifyCommand = (
   command: string,
   config?: PermissionConfig,
+  settingsService?: SettingsService,
 ): Classification => {
-  const effectiveConfig = config ?? getCachedConfig();
+  const effectiveConfig =
+    config ??
+    (settingsService ?? defaultSettingsService).loadPermissionConfig();
 
   const normalizedCommand = applyPrefixMappings(
     command,

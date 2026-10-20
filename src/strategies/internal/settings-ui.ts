@@ -5,14 +5,14 @@
 import { getSettingsListTheme } from "@earendil-works/pi-coding-agent";
 import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
 import { invalidateConfigCache } from "../../core/config";
-import {
-  loadPermissionConfig,
-  savePermissionConfig,
-} from "../../core/settings";
+import { SettingsService } from "../../core/settings";
 import { Notification } from "../../core/types";
 
-export const createSettingsList = (done: () => void): SettingsList => {
-  const config = loadPermissionConfig();
+export const createSettingsList = (
+  settingsService: SettingsService,
+  done: () => void,
+): SettingsList => {
+  const config = settingsService.loadPermissionConfig();
 
   const items: SettingItem[] = [
     {
@@ -36,11 +36,11 @@ export const createSettingsList = (done: () => void): SettingsList => {
     items.length,
     getSettingsListTheme(),
     (id, newValue) => {
-      const cfg = loadPermissionConfig();
+      const cfg = settingsService.loadPermissionConfig();
       if (id === "quiet-startup") cfg.quietStartup = newValue === "on";
       if (id === "system-notifications")
         cfg.systemNotifications = newValue as Notification;
-      savePermissionConfig(cfg);
+      settingsService.savePermissionConfig(cfg);
       invalidateConfigCache();
     },
     done,

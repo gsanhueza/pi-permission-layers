@@ -2,6 +2,8 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import type { PermissionConfig } from "../core/interfaces";
+import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import {
   LEVELS,
@@ -9,7 +11,7 @@ import {
   PERMISSION_MODES,
   PERMISSION_MODE_INFO,
 } from "../core/types";
-import { BasePermissionStrategy, type BaseStrategyDeps } from "./base-strategy";
+import { BasePermissionStrategy } from "./base-strategy";
 import { notify } from "./internal/commands";
 import { checkPermission } from "./internal/permission-check";
 import { createSettingsList } from "./internal/settings-ui";
@@ -23,8 +25,16 @@ import {
  * UI strategy — uses prompts, status bar, and system notifications.
  */
 export class UIPermissionStrategy extends BasePermissionStrategy {
-  constructor(deps?: BaseStrategyDeps) {
-    super(deps);
+  constructor(
+    getCachedConfig?: (settingsService: SettingsService) => PermissionConfig,
+    settingsService?: SettingsService,
+    execFileFn?: (
+      file: string,
+      args: readonly string[],
+      cb: (err: Error | null, stdout: string, stderr: string) => void,
+    ) => void,
+  ) {
+    super(getCachedConfig, settingsService, execFileFn);
   }
 
   // ── State ────────────────────────────────────────────────────────
@@ -50,6 +60,8 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
     await notifySystem(
       "⚠️ Permission Required",
       `Dangerous command: ${command}`,
+      this.settingsService,
+      this.execFileFn,
     );
 
     if (this.state.permissionMode === "block") {
@@ -90,6 +102,8 @@ Use /permission-mode ask to enable confirmations.`,
     await notifySystem(
       `Permission Required (${requiredInfo.label})`,
       `${message}\nCurrent level: ${currentInfo.label}`,
+      this.settingsService,
+      this.execFileFn,
     );
 
     if (this.state.permissionMode === "block") {
@@ -133,7 +147,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     }
     if (this.state.currentLevel === "bypassed") {
       notify(ctx, "⚠️ Permission bypassed - all checks disabled!", "warning");
-    } else if (!isQuietMode(ctx)) {
+    } else if (!isQuietMode(ctx, this.settingsService)) {
       notify(
         ctx,
         `Permission: ${getStatusText(this.state.currentLevel)} (use /permission to change)`,
@@ -240,7 +254,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
 
   protected async onSettings(ctx: ExtensionCommandContext): Promise<void> {
     await ctx.ui.custom<void>((_tui, _theme, _keybindings, done) =>
-      createSettingsList(() => done()),
+      createSettingsList(this.settingsService, () => done()),
     );
   }
 }

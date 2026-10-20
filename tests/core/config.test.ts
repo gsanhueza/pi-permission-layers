@@ -7,25 +7,30 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeSimpleNotifyCtx } from "../fixtures/helpers";
 import { handleConfigSubcommand } from "../../src/strategies/internal/commands";
+import { SettingsService } from "../../src/core/settings";
 import { SettingsManager } from "../../src/core/manager";
 
 const makeCtx = makeSimpleNotifyCtx;
 
-// Mock for assertions
-const savePermissionConfig = vi.fn();
-
 const mockSettings = require("../fixtures/mock-settings.json");
 
-const configDeps = {
-  loadPermissionConfig: () =>
-    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
-  savePermissionConfig,
-  invalidateConfigCache: () => {},
-};
+function createConfigDeps(
+  savePermissionConfig: ReturnType<typeof vi.fn> = vi.fn(),
+) {
+  const settingsService = {
+    loadPermissionConfig: () =>
+      (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
+    savePermissionConfig,
+  } as unknown as SettingsService;
+  return {
+    settingsService,
+    invalidateConfigCache: () => {},
+    savePermissionConfig,
+  };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  savePermissionConfig.mockReset();
 });
 
 // ============================================================================
@@ -36,7 +41,7 @@ describe("handleConfigSubcommand: config show", () => {
   test("calls notify with config content", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("show", ctx as never, "", configDeps);
+    await handleConfigSubcommand("show", ctx as never, "", createConfigDeps());
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -46,7 +51,7 @@ describe("handleConfigSubcommand: config show", () => {
   });
 
   test("calls notify with empty config when none set", async () => {
-    const deps = { ...configDeps, loadPermissionConfig: () => ({}) };
+    const deps = { ...createConfigDeps(), loadPermissionConfig: () => ({}) };
     const ctx = makeCtx();
 
     await handleConfigSubcommand("show", ctx as never, "", deps);
@@ -64,7 +69,7 @@ describe("handleConfigSubcommand: config reset", () => {
   test("calls notify with reset confirmation", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("reset", ctx as never, "", configDeps);
+    await handleConfigSubcommand("reset", ctx as never, "", createConfigDeps());
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -72,9 +77,11 @@ describe("handleConfigSubcommand: config reset", () => {
   });
 
   test("calls savePermissionConfig with empty object", async () => {
+    const savePermissionConfig = vi.fn();
     const ctx = makeCtx();
+    const deps = createConfigDeps(savePermissionConfig);
 
-    await handleConfigSubcommand("reset", ctx as never, "", configDeps);
+    await handleConfigSubcommand("reset", ctx as never, "", deps);
 
     expect(savePermissionConfig).toHaveBeenCalledWith({});
   });
@@ -88,7 +95,12 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("unknown action shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("foobar", ctx as never, "", configDeps);
+    await handleConfigSubcommand(
+      "foobar",
+      ctx as never,
+      "",
+      createConfigDeps(),
+    );
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -102,7 +114,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("empty args shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("", ctx as never, "", configDeps);
+    await handleConfigSubcommand("", ctx as never, "", createConfigDeps());
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");
@@ -114,7 +126,7 @@ describe("handleConfigSubcommand: unknown subcommand → help text", () => {
   test("whitespace-only args shows help text", async () => {
     const ctx = makeCtx();
 
-    await handleConfigSubcommand("   ", ctx as never, "", configDeps);
+    await handleConfigSubcommand("   ", ctx as never, "", createConfigDeps());
 
     expect(ctx.calls.length).toBe(1);
     expect(ctx.calls[0].level).toBe("info");

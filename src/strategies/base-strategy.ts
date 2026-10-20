@@ -2,19 +2,19 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
   ToolCallEvent,
+  getAgentDir,
 } from "@earendil-works/pi-coding-agent";
+import { execFile } from "node:child_process";
+
 import { classifyCommand } from "../core/classifiers/shell-classifier";
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
-import { getCachedConfig } from "../core/config";
+import { getCachedConfig, invalidateConfigCache } from "../core/config";
 import type {
   Classification,
   PermissionState,
   PermissionConfig,
 } from "../core/interfaces";
-import {
-  saveGlobalPermissionLevel,
-  saveGlobalPermissionMode,
-} from "../core/settings";
+import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVELS, LEVEL_INDEX, PERMISSION_MODES } from "../core/types";
 import { PermissionStrategy } from "./interfaces";
@@ -25,29 +25,36 @@ import { parseMcpInput } from "./internal/mcp-input";
 import { classifyAndCheck } from "./internal/tool-permission";
 
 /**
- * Dependencies for the base strategy.
- */
-export interface BaseStrategyDeps {
-  getCachedConfig: () => PermissionConfig;
-  saveGlobalPermissionLevel: (level: PermissionLevel) => void;
-  saveGlobalPermissionMode: (mode: PermissionMode) => void;
-}
-
-/**
  * Abstract base class that owns the shared permission algorithm.
  *
  * Concrete strategies only implement the abstract presentation hooks.
  */
 export abstract class BasePermissionStrategy implements PermissionStrategy {
   public readonly state: PermissionState;
-  protected readonly deps: BaseStrategyDeps;
+  protected readonly getCachedConfig: (
+    settingsService: SettingsService,
+  ) => PermissionConfig;
+  protected readonly settingsService: SettingsService;
+  protected readonly execFileFn: (
+    file: string,
+    args: readonly string[],
+    cb: (err: Error | null, stdout: string, stderr: string) => void,
+  ) => void;
 
-  constructor(deps?: BaseStrategyDeps) {
-    this.deps = deps ?? {
-      getCachedConfig,
-      saveGlobalPermissionLevel,
-      saveGlobalPermissionMode,
-    };
+  constructor(
+    getCachedConfigFn?: (settingsService: SettingsService) => PermissionConfig,
+    settingsService?: SettingsService,
+    execFileFn?: (
+      file: string,
+      args: readonly string[],
+      cb: (err: Error | null, stdout: string, stderr: string) => void,
+    ) => void,
+  ) {
+    this.getCachedConfig =
+      getCachedConfigFn ?? ((s: SettingsService) => getCachedConfig(s));
+    this.settingsService =
+      settingsService ?? new SettingsService(getAgentDir());
+    this.execFileFn = execFileFn ?? execFile;
     this.state = this.createInitialState();
   }
 
@@ -61,7 +68,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       isModeSessionOnly: false,
     };
 
-    initializeSessionState(state);
+    initializeSessionState(state, this.settingsService);
     return state;
   }
 
@@ -73,7 +80,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     this.state.currentLevel = level;
     this.state.isSessionOnly = !saveGlobally;
     if (saveGlobally) {
-      this.deps.saveGlobalPermissionLevel(level);
+      this.settingsService.saveGlobalPermissionLevel(level);
     }
   }
 
@@ -81,14 +88,14 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     this.state.permissionMode = mode;
     this.state.isModeSessionOnly = !saveGlobally;
     if (saveGlobally) {
-      this.deps.saveGlobalPermissionMode(mode);
+      this.settingsService.saveGlobalPermissionMode(mode);
     }
   }
 
   // ── Session ──────────────────────────────────────────────────────
 
   handleSessionStart(ctx: ExtensionContext): void {
-    initializeSessionState(this.state);
+    initializeSessionState(this.state, this.settingsService);
     this.onSessionStart(ctx);
   }
 
@@ -119,7 +126,11 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): Promise<{ block: true; reason: string } | undefined> {
     if (this.state.currentLevel === "bypassed") return undefined;
 
-    const classification = classifyCommand(command);
+    const classification = classifyCommand(
+      command,
+      undefined,
+      this.settingsService,
+    );
 
     if (classification.dangerous) {
       return this.onDangerous(command, ctx);
@@ -137,7 +148,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     input: McpToolInput,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    const config = this.deps.getCachedConfig();
+    const config = this.getCachedConfig(this.settingsService);
     const { targetTool, requiredLevel, dangerous } = parseMcpInput(
       input,
       config.mcp,
@@ -167,7 +178,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): Promise<{ block: true; reason: string } | undefined> {
     if (this.state.currentLevel === "bypassed") return undefined;
 
-    const config = this.deps.getCachedConfig();
+    const config = this.getCachedConfig(this.settingsService);
     const classification = resolveToolLevel(toolName, config.tools);
     const action = toolName === "write" ? "Write" : "Edit";
 
@@ -198,7 +209,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     }
 
     // Fallback: all other tools (read, ls, grep, find, unknown)
-    const config = this.deps.getCachedConfig();
+    const config = this.getCachedConfig(this.settingsService);
     const classification = resolveToolLevel(event.toolName, config.tools);
 
     return this.checkAndHandleTool(
@@ -259,7 +270,10 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     // config subcommand
     if (arg === "config" || arg.startsWith("config ")) {
       const configArgs = arg.replace(/^config\s*/, "");
-      await handleConfigSubcommand(configArgs, ctx, this.configPrefix());
+      await handleConfigSubcommand(configArgs, ctx, this.configPrefix(), {
+        settingsService: this.settingsService,
+        invalidateConfigCache,
+      });
       return;
     }
 

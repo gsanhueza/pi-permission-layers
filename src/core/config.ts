@@ -1,5 +1,5 @@
 import { Classification, PermissionConfig } from "./interfaces";
-import { loadPermissionConfig } from "./settings";
+import { SettingsService } from "./settings";
 
 // ============================================================================
 // CONFIGURATION CACHING
@@ -17,10 +17,12 @@ export const invalidateConfigCache = (): void => {
   regexCache.clear();
 };
 
-export const getCachedConfig = (): PermissionConfig => {
+export const getCachedConfig = (
+  settingsService: SettingsService,
+): PermissionConfig => {
   const now = Date.now();
   if (!configCache || now - configCacheTime > CONFIG_CACHE_TTL) {
-    configCache = loadPermissionConfig();
+    configCache = settingsService.loadPermissionConfig();
     configCacheTime = now;
   }
   return configCache;

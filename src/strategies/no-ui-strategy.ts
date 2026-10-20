@@ -2,9 +2,11 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import type { PermissionConfig } from "../core/interfaces";
+import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVEL_INFO, PERMISSION_MODE_INFO } from "../core/types";
-import { BasePermissionStrategy, type BaseStrategyDeps } from "./base-strategy";
+import { BasePermissionStrategy } from "./base-strategy";
 import { notify } from "./internal/commands";
 import { checkPermission } from "./internal/permission-check";
 
@@ -14,8 +16,16 @@ const PREFIX = "[pi-permission-layers] ";
  * No-UI strategy — returns block messages, no prompts or status bar.
  */
 export class NoUIPermissionStrategy extends BasePermissionStrategy {
-  constructor(deps?: BaseStrategyDeps) {
-    super(deps);
+  constructor(
+    getCachedConfig?: (settingsService: SettingsService) => PermissionConfig,
+    settingsService?: SettingsService,
+    execFileFn?: (
+      file: string,
+      args: readonly string[],
+      cb: (err: Error | null, stdout: string, stderr: string) => void,
+    ) => void,
+  ) {
+    super(getCachedConfig, settingsService, execFileFn);
   }
 
   // ── State ────────────────────────────────────────────────────────
