@@ -3,20 +3,10 @@
  *
  * Run with: npm test
  */
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { getSettingsMock, withArgv } from "../../fixtures/helpers";
 
 vi.mock("../../src/core/settings", () => getSettingsMock());
-
-// Mock getCachedConfig before importing hasInteractiveUI
-const mockCachedConfig = vi.fn();
-vi.mock("../../src/core/config", async () => {
-  const actual = await vi.importActual("../../src/core/config");
-  return {
-    ...actual,
-    getCachedConfig: (...args: unknown[]) => mockCachedConfig(...args),
-  };
-});
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { hasInteractiveUI } from "../../../src/strategies/internal/ui-detection";
@@ -38,10 +28,6 @@ const makeCtx = (overrides: Partial<ExtensionContext> = {}): ExtensionContext =>
 // ============================================================================
 
 describe("hasInteractiveUI: ctx.hasUI false — returns false", () => {
-  beforeEach(() => {
-    mockCachedConfig.mockReturnValue({});
-  });
-
   test("returns false when ctx has no UI", () => {
     const ctx = makeCtx();
     expect(hasInteractiveUI(ctx)).toBe(false);
@@ -58,10 +44,6 @@ describe("hasInteractiveUI: ctx.hasUI false — returns false", () => {
 // ============================================================================
 
 describe("hasInteractiveUI: ctx.hasUI true — returns true", () => {
-  beforeEach(() => {
-    mockCachedConfig.mockReturnValue({});
-  });
-
   test("returns true when ctx has UI and no mode override", () => {
     const ctx = makeCtx({ hasUI: true });
     expect(hasInteractiveUI(ctx)).toBe(true);
@@ -78,10 +60,6 @@ describe("hasInteractiveUI: ctx.hasUI true — returns true", () => {
 // ============================================================================
 
 describe("hasInteractiveUI: --mode=print — returns false", () => {
-  beforeEach(() => {
-    mockCachedConfig.mockReturnValue({});
-  });
-
   test("returns false when mode is print even if ctx has UI", () => {
     expect(
       withArgv(["node", "pi", "--mode=print"], () =>
@@ -104,10 +82,6 @@ describe("hasInteractiveUI: --mode=print — returns false", () => {
 // ============================================================================
 
 describe("hasInteractiveUI: --mode=interactive — returns true", () => {
-  beforeEach(() => {
-    mockCachedConfig.mockReturnValue({});
-  });
-
   test("returns true when mode is interactive", () => {
     expect(
       withArgv(["node", "pi", "--mode=interactive"], () =>
@@ -122,10 +96,6 @@ describe("hasInteractiveUI: --mode=interactive — returns true", () => {
 // ============================================================================
 
 describe("hasInteractiveUI: --mode <value> — space separator", () => {
-  beforeEach(() => {
-    mockCachedConfig.mockReturnValue({});
-  });
-
   test("returns false when mode is print (space separator)", () => {
     expect(
       withArgv(["node", "pi", "--mode", "print"], () =>

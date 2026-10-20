@@ -48,8 +48,3 @@ describe("getStatusText", () => {
     expect(result).toContain("\x1b[0m"); // RESET
   });
 });
-
-// ============================================================================
-// isQuietMode — deferred: needs DI refactor in ui-rendering.ts
-// (mocking getCachedConfig via vi.mock is fragile; see issue #XXX)
-// ============================================================================
