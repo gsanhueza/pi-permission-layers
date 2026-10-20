@@ -2,7 +2,7 @@
  * Shared test helpers for strategy hook testing.
  *
  * Provides SelectCall, NotifyCall types and a makeCtx factory
- * used by session-only-behavior, permission-prompt, and strategy-hooks tests.
+ * used by session-only-behavior, ui-strategy, and ui-strategy-hooks tests.
  *
  * Also provides shared mock factories and utilities used across all test files.
  */

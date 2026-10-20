@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { resolveMcpLevel } from "../src/core/classifiers/mcp-classifier";
-import type { McpPermissionConfig } from "../src/core/interfaces";
+import { resolveMcpLevel } from "../../../src/core/classifiers/mcp-classifier";
+import type { McpPermissionConfig } from "../../../src/core/interfaces";
 
 // ============================================================================
 // resolveMcpLevel — mode-based resolution

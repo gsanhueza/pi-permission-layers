@@ -9,9 +9,9 @@ import {
   getPiCodingAgentMock,
   getSettingsMock,
   makeCtx,
-} from "./fixtures/helpers";
+} from "../fixtures/helpers";
 
-vi.mock("../src/core/settings", () =>
+vi.mock("../../src/core/settings", () =>
   getSettingsMock({
     loadGlobalPermissionLevel: () => null,
     loadGlobalPermissionMode: () => null,
@@ -23,8 +23,8 @@ vi.mock("../src/core/settings", () =>
 vi.mock("@earendil-works/pi-coding-agent", () => getPiCodingAgentMock());
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { NoUIPermissionStrategy } from "../src/strategies/no-ui-strategy";
-import { UIPermissionStrategy } from "../src/strategies/ui-strategy";
+import { NoUIPermissionStrategy } from "../../src/strategies/no-ui-strategy";
+import { UIPermissionStrategy } from "../../src/strategies/ui-strategy";
 
 beforeEach(() => {
   vi.clearAllMocks();

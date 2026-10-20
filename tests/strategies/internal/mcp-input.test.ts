@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { parseMcpInput } from "../src/strategies/internal/mcp-input";
+import { parseMcpInput } from "../../../src/strategies/internal/mcp-input";
 
 // ============================================================================
 // HELPERS

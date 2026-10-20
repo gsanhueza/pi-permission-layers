@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, test } from "vitest";
-import { resolveToolLevel } from "../src/core/classifiers/tool-classifier";
-import type { ToolPermissionConfig } from "../src/core/interfaces";
+import { resolveToolLevel } from "../../../src/core/classifiers/tool-classifier";
+import type { ToolPermissionConfig } from "../../../src/core/interfaces";
 
 // ============================================================================
 // resolveToolLevel — default resolution

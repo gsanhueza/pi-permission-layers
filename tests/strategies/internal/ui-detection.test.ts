@@ -4,14 +4,14 @@
  * Run with: npm test
  */
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getSettingsMock, withArgv } from "./fixtures/helpers";
+import { getSettingsMock, withArgv } from "../../fixtures/helpers";
 
-vi.mock("../src/core/settings", () => getSettingsMock());
+vi.mock("../../src/core/settings", () => getSettingsMock());
 
 // Mock getCachedConfig before importing hasInteractiveUI
 const mockCachedConfig = vi.fn();
-vi.mock("../src/core/config", async () => {
-  const actual = await vi.importActual("../src/core/config");
+vi.mock("../../src/core/config", async () => {
+  const actual = await vi.importActual("../../src/core/config");
   return {
     ...actual,
     getCachedConfig: (...args: unknown[]) => mockCachedConfig(...args),
@@ -19,7 +19,7 @@ vi.mock("../src/core/config", async () => {
 });
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { hasInteractiveUI } from "../src/strategies/internal/ui-detection";
+import { hasInteractiveUI } from "../../../src/strategies/internal/ui-detection";
 
 // ============================================================================
 // HELPERS

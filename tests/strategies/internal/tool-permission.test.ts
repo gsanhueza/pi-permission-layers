@@ -5,9 +5,12 @@
  */
 
 import { describe, expect, test } from "vitest";
-import type { Classification, PermissionState } from "../src/core/interfaces";
-import type { PermissionLevel } from "../src/core/types";
-import { classifyAndCheck } from "../src/strategies/internal/tool-permission";
+import type {
+  Classification,
+  PermissionState,
+} from "../../../src/core/interfaces";
+import type { PermissionLevel } from "../../../src/core/types";
+import { classifyAndCheck } from "../../../src/strategies/internal/tool-permission";
 
 // ============================================================================
 // HELPERS

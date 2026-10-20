@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, test } from "vitest";
-import type { PermissionState } from "../src/core/interfaces";
-import { checkPermission } from "../src/strategies/internal/permission-check";
+import type { PermissionState } from "../../../src/core/interfaces";
+import { checkPermission } from "../../../src/strategies/internal/permission-check";
 
 // ============================================================================
 // HELPERS
