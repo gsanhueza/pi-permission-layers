@@ -6,24 +6,10 @@
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { SettingsService } from "../../src/core/settings";
-import { NoUIPermissionStrategy } from "../../src/strategies/no-ui-strategy";
-import { UIPermissionStrategy } from "../../src/strategies/ui-strategy";
-
-// Default deps for strategy tests
-const createDeps = (saveLevel = vi.fn(), saveMode = vi.fn()) => {
-  return [
-    () => ({}),
-    {
-      loadPermissionConfig: () => ({}),
-      loadGlobalPermissionLevel: () => null,
-      loadGlobalPermissionMode: () => null,
-      saveGlobalPermissionLevel: saveLevel,
-      saveGlobalPermissionMode: saveMode,
-    } as unknown as SettingsService,
-    vi.fn() as any,
-  ] as const;
-};
+import {
+  createNoUIPermissionStrategy,
+  createUIPermissionStrategy,
+} from "../mocks/strategy-factory";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -35,7 +21,7 @@ beforeEach(() => {
 
 describe("NoUIPermissionStrategy: setLevel always session-only", () => {
   test("saveGlobally: true still sets isSessionOnly: true", () => {
-    const strategy = new NoUIPermissionStrategy(...createDeps());
+    const strategy = createNoUIPermissionStrategy();
 
     strategy.setLevel("medium", true, {} as ExtensionContext);
     expect(strategy.state.currentLevel).toBe("medium");
@@ -45,7 +31,7 @@ describe("NoUIPermissionStrategy: setLevel always session-only", () => {
 
 describe("NoUIPermissionStrategy: setMode always session-only", () => {
   test("saveGlobally: true still sets isModeSessionOnly: true", () => {
-    const strategy = new NoUIPermissionStrategy(...createDeps());
+    const strategy = createNoUIPermissionStrategy();
 
     strategy.setMode("ask", true);
     expect(strategy.state.permissionMode).toBe("ask");
@@ -55,7 +41,7 @@ describe("NoUIPermissionStrategy: setMode always session-only", () => {
 
 describe("NoUIPermissionStrategy: session state init", () => {
   test("starts with minimal level and ask mode", () => {
-    const strategy = new NoUIPermissionStrategy(...createDeps());
+    const strategy = createNoUIPermissionStrategy();
 
     expect(strategy.state.currentLevel).toBe("minimal");
     expect(strategy.state.permissionMode).toBe("ask");
@@ -70,7 +56,7 @@ describe("NoUIPermissionStrategy: session state init", () => {
 
 describe("UIPermissionStrategy: session state init", () => {
   test("starts with minimal level and ask mode", () => {
-    const strategy = new UIPermissionStrategy(...createDeps());
+    const strategy = createUIPermissionStrategy();
 
     expect(strategy.state.currentLevel).toBe("minimal");
     expect(strategy.state.permissionMode).toBe("ask");
@@ -82,7 +68,7 @@ describe("UIPermissionStrategy: session state init", () => {
 describe("UIPermissionStrategy: setLevel with saveGlobally", () => {
   test("saveGlobally: true sets isSessionOnly: false", () => {
     const saveLevel = vi.fn();
-    const strategy = new UIPermissionStrategy(...createDeps(saveLevel));
+    const strategy = createUIPermissionStrategy({ saveLevel });
 
     strategy.setLevel("high", true, {} as ExtensionContext);
     expect(strategy.state.currentLevel).toBe("high");
@@ -92,7 +78,7 @@ describe("UIPermissionStrategy: setLevel with saveGlobally", () => {
 
   test("saveGlobally: false sets isSessionOnly: true", () => {
     const saveLevel = vi.fn();
-    const strategy = new UIPermissionStrategy(...createDeps(saveLevel));
+    const strategy = createUIPermissionStrategy({ saveLevel });
 
     strategy.setLevel("low", false, {} as ExtensionContext);
     expect(strategy.state.currentLevel).toBe("low");
@@ -104,7 +90,7 @@ describe("UIPermissionStrategy: setLevel with saveGlobally", () => {
 describe("UIPermissionStrategy: setMode with saveGlobally", () => {
   test("saveGlobally: true sets isModeSessionOnly: false", () => {
     const saveMode = vi.fn();
-    const strategy = new UIPermissionStrategy(...createDeps(vi.fn(), saveMode));
+    const strategy = createUIPermissionStrategy({ saveMode });
 
     strategy.setMode("ask", true);
     expect(strategy.state.permissionMode).toBe("ask");
@@ -114,7 +100,7 @@ describe("UIPermissionStrategy: setMode with saveGlobally", () => {
 
   test("saveGlobally: false sets isModeSessionOnly: true", () => {
     const saveMode = vi.fn();
-    const strategy = new UIPermissionStrategy(...createDeps(vi.fn(), saveMode));
+    const strategy = createUIPermissionStrategy({ saveMode });
 
     strategy.setMode("block", false);
     expect(strategy.state.permissionMode).toBe("block");
