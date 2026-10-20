@@ -1293,6 +1293,7 @@ describe("prefix: combined with overrides", () => {
 describe("config: empty config doesn't break classification", () => {
   test("empty config", () => {
     const config: PermissionConfig = {};
+    void config;
     assertLevel("ls", "minimal");
     assertLevel("npm install", "medium");
     assertLevel("git push", "high");

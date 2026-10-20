@@ -64,7 +64,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
     // Second select: "Session only"
     const ctx = makeCtx("Session only");
     let callCount = 0;
-    ctx.ui.select = async (message: string, options: string[]) => {
+    ctx.ui.select = async (_message: string, options: string[]) => {
       callCount++;
       if (callCount === 1) {
         // Find and return "Low: File ops only"
@@ -83,7 +83,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
     const strategy = new UIPermissionStrategy();
     const ctx = makeCtx("Global (persists)");
     let callCount = 0;
-    ctx.ui.select = async (message: string, options: string[]) => {
+    ctx.ui.select = async (_message: string, options: string[]) => {
       callCount++;
       if (callCount === 1) {
         const mediumOpt = options.find((o) => o.startsWith("Medium:"));
@@ -111,7 +111,7 @@ describe("UIPermissionStrategy: onViewLevel", () => {
     const strategy = new UIPermissionStrategy();
     const ctx = makeCtx("Cancel");
     let callCount = 0;
-    ctx.ui.select = async (message: string, options: string[]) => {
+    ctx.ui.select = async (_message: string, options: string[]) => {
       callCount++;
       if (callCount === 1) {
         const highOpt = options.find((o) => o.startsWith("High:"));
@@ -198,7 +198,7 @@ describe("UIPermissionStrategy: onViewMode", () => {
     const strategy = new UIPermissionStrategy();
     const ctx = makeCtx("Session only");
     let callCount = 0;
-    ctx.ui.select = async (message: string, options: string[]) => {
+    ctx.ui.select = async (_message: string, options: string[]) => {
       callCount++;
       if (callCount === 1) {
         const blockOpt = options.find((o) => o.startsWith("Block:"));
