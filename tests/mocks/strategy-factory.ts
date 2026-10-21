@@ -29,7 +29,7 @@ export function createUIPermissionStrategy(
     saveGlobalPermissionMode: deps?.saveMode ?? (() => {}),
   } as unknown as SettingsService;
 
-  return new UIPermissionStrategy(settingsService, () => {});
+  return new UIPermissionStrategy(settingsService, (() => {}) as any);
 }
 
 /**
@@ -46,6 +46,6 @@ export function createNoUIPermissionStrategy(): NoUIPermissionStrategy {
       saveGlobalPermissionLevel: () => {},
       saveGlobalPermissionMode: () => {},
     } as unknown as SettingsService,
-    () => {},
+    (() => {}) as any,
   );
 }

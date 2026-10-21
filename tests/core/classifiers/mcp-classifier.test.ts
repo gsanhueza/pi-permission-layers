@@ -61,6 +61,28 @@ describe("resolveMcpLevel: mode-based resolution", () => {
   test("action mode returns null (not a known mode)", () => {
     expect(resolveMcpLevel("any_tool", "action", undefined)).toBeNull();
   });
+
+  test("action mode with user config still returns null for tool lookup", () => {
+    const config: McpPermissionConfig = { minimal: ["search"] };
+    expect(resolveMcpLevel("unknown_tool", "action", config)).toBeNull();
+  });
+
+  test("action mode with tool name match in user config", () => {
+    const config: McpPermissionConfig = { minimal: ["github_list_commits"] };
+    expect(resolveMcpLevel("github_list_commits", "action", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+  });
+
+  test("unknown tool in search mode falls through to mode check", () => {
+    // toolNameResult is null, then KNOWN_MCP_MODES.has("search") is true
+    const config: McpPermissionConfig = { minimal: ["search"] };
+    expect(resolveMcpLevel("unknown_tool", "search", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+  });
 });
 
 // ============================================================================

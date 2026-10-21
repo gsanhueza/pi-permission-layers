@@ -13,25 +13,24 @@ import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVELS, LEVEL_INDEX, PERMISSION_MODES } from "../core/types";
 import { PermissionStrategy } from "./interfaces";
-import { handleConfigSubcommand } from "./internal/commands";
+import { handleConfigSubcommand, notify } from "./internal/commands";
+import { checkPermission } from "./internal/permission-check";
 import { initializeSessionState } from "./internal/events";
 import type { McpToolInput } from "./internal/mcp-input";
 import { parseMcpInput } from "./internal/mcp-input";
 import { classifyAndCheck } from "./internal/tool-permission";
+import { LEVEL_INFO, PERMISSION_MODE_INFO } from "../core/types";
 
 /**
- * Abstract base class that owns the shared permission algorithm.
+ * Base permission strategy — NoUI defaults with shared permission algorithm.
  *
- * Concrete strategies only implement the abstract presentation hooks.
+ * Concrete strategies (e.g. UIStrategy) override the presentation hooks
+ * for prompts and status bar updates.
  */
-export abstract class BasePermissionStrategy implements PermissionStrategy {
+export class BasePermissionStrategy implements PermissionStrategy {
   public readonly state: PermissionState;
   protected readonly settingsService: SettingsService;
-  protected readonly execFileFn: (
-    file: string,
-    args: readonly string[],
-    cb: (err: Error | null, stdout: string, stderr: string) => void,
-  ) => void;
+  protected readonly execFileFn: typeof execFile;
 
   /**
    * Create a BasePermissionStrategy with optional overrides for testing.
@@ -39,14 +38,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
    * @param settingsService - Settings service (defaults to agent dir).
    * @param execFileFn - Child process execFile (defaults to node:child_process.execFile).
    */
-  constructor(
-    settingsService?: SettingsService,
-    execFileFn?: (
-      file: string,
-      args: readonly string[],
-      cb: (err: Error | null, stdout: string, stderr: string) => void,
-    ) => void,
-  ) {
+  constructor(settingsService?: SettingsService, execFileFn?: typeof execFile) {
     this.settingsService =
       settingsService ?? new SettingsService(getAgentDir());
     this.execFileFn = execFileFn ?? execFile;
@@ -122,17 +114,48 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   // ── Tool handlers ────────────────────────────────────────────────
 
-  protected abstract onDangerous(
+  /**
+   * NoUI default: block dangerous commands with a helpful message.
+   *
+   * @param command - The dangerous command string.
+   * @param _ctx - Extension context (unused in no-UI mode).
+   * @returns A block result with a helpful error message.
+   */
+  protected async onDangerous(
     command: string,
-    ctx: ExtensionContext,
-  ): Promise<{ block: true; reason: string } | undefined>;
+    _ctx: ExtensionContext,
+  ): Promise<{ block: true; reason: string } | undefined> {
+    return {
+      block: true,
+      reason: `Dangerous command requires confirmation: ${command}
+User can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."`,
+    };
+  }
 
-  protected abstract onRequest(
+  /**
+   * NoUI default: block insufficient permission with a helpful message.
+   *
+   * @param requiredLevel - The level that was required.
+   * @param message - The short message.
+   * @param _details - The detailed description (unused in no-UI).
+   * @param _ctx - Extension context (unused in no-UI mode).
+   * @returns A block result with a helpful error message, or undefined to allow.
+   */
+  protected async onRequest(
     requiredLevel: PermissionLevel,
     message: string,
-    details: string,
-    ctx: ExtensionContext,
-  ): Promise<{ block: true; reason: string } | undefined>;
+    _details: string,
+    _ctx: ExtensionContext,
+  ): Promise<{ block: true; reason: string } | undefined> {
+    if (checkPermission(this.state, requiredLevel)) return undefined;
+
+    return {
+      block: true,
+      reason: `${message}
+Blocked by permission (${this.state.currentLevel}). Allowed at this level: ${LEVEL_INFO[this.state.currentLevel].desc}
+User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
+    };
+  }
 
   /** No-op default. Override in subclasses for MCP-allowed notifications. */
   protected onMcpAllowed(_toolName: string, _ctx: ExtensionContext): void {}
@@ -296,22 +319,78 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   // ── Command handlers ─────────────────────────────────────────────
 
-  protected abstract onViewLevel(ctx: ExtensionCommandContext): Promise<void>;
-  protected abstract onSetLevel(
+  /**
+   * NoUI default: notify the user of their current permission level.
+   *
+   * @param ctx - Extension command context for the notification.
+   */
+  protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
+    notify(
+      ctx,
+      `Current permission: ${LEVEL_INFO[this.state.currentLevel].label} (${LEVEL_INFO[this.state.currentLevel].desc})`,
+      "info",
+      this.configPrefix(),
+    );
+  }
+
+  /**
+   * NoUI default: set the level and notify the user.
+   *
+   * @param level - The permission level to set.
+   * @param ctx - Extension command context for the notification.
+   */
+  protected async onSetLevel(
     level: PermissionLevel,
     ctx: ExtensionCommandContext,
-  ): Promise<void>;
-  protected abstract onViewMode(ctx: ExtensionCommandContext): Promise<void>;
-  protected abstract onSetMode(
+  ): Promise<void> {
+    this.setLevel(level, false, ctx);
+    notify(
+      ctx,
+      `Permission: ${LEVEL_INFO[level].label}`,
+      "info",
+      this.configPrefix(),
+    );
+  }
+
+  /**
+   * NoUI default: notify the user of their current permission mode.
+   *
+   * @param ctx - Extension command context for the notification.
+   */
+  protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
+    notify(
+      ctx,
+      `Current permission mode: ${PERMISSION_MODE_INFO[this.state.permissionMode].label} (${PERMISSION_MODE_INFO[this.state.permissionMode].desc})`,
+      "info",
+      this.configPrefix(),
+    );
+  }
+
+  /**
+   * NoUI default: set the mode and notify the user.
+   *
+   * @param mode - The permission mode to set.
+   * @param ctx - Extension command context for the notification.
+   */
+  protected async onSetMode(
     mode: PermissionMode,
     ctx: ExtensionCommandContext,
-  ): Promise<void>;
+  ): Promise<void> {
+    this.setMode(mode, false);
+    notify(
+      ctx,
+      `Permission mode: ${PERMISSION_MODE_INFO[mode].label}`,
+      "info",
+      this.configPrefix(),
+    );
+  }
+
   /** No-op default. Override in subclasses for settings UI. */
   protected async onSettings(_ctx: ExtensionCommandContext): Promise<void> {}
 
-  /** Returns the prefix for no-UI messages (empty string for UI). */
+  /** Returns the prefix for no-UI messages. */
   protected configPrefix(): string {
-    return "";
+    return "[pi-permission-layers] ";
   }
 
   /**

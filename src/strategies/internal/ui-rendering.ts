@@ -1,5 +1,6 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { execFile } from "node:child_process";
+
 import { SettingsService } from "../../core/settings";
 import type { PermissionLevel } from "../../core/types";
 import { LEVEL_INFO } from "../../core/types";
@@ -95,14 +96,14 @@ const isTmux = (): boolean => {
   return !!process.env.TMUX;
 };
 
-const isAppFocused = async (): Promise<boolean> => {
+const isAppFocused = async (execFileFn: typeof execFile): Promise<boolean> => {
   if (process.platform !== "darwin") return true;
 
   const bundleId = getTerminalBundleId();
   if (!bundleId) return true;
 
   return new Promise((resolve) => {
-    execFile(
+    execFileFn(
       "osascript",
       [
         "-e",
@@ -120,10 +121,12 @@ const isAppFocused = async (): Promise<boolean> => {
   });
 };
 
-const isTerminalFocused = async (): Promise<boolean> => {
+const isTerminalFocused = async (
+  execFileFn: typeof execFile,
+): Promise<boolean> => {
   if (isTmux()) {
     return new Promise((resolve) => {
-      execFile(
+      execFileFn(
         "tmux",
         ["display-message", "-p", "#{pane_active}"],
         { timeout: 500 },
@@ -132,13 +135,13 @@ const isTerminalFocused = async (): Promise<boolean> => {
             resolve(false);
             return;
           }
-          resolve(isAppFocused());
+          resolve(isAppFocused(execFileFn));
         },
       );
     });
   }
 
-  return isAppFocused();
+  return isAppFocused(execFileFn);
 };
 
 // ============================================================================
@@ -153,21 +156,16 @@ const isTerminalFocused = async (): Promise<boolean> => {
  * @param title - Notification title.
  * @param message - Notification body.
  * @param settingsService - Settings service for config lookup.
- * @param execFileFn - Child process execFile for spawning notifications.
+ * @param execFileFn - Child process execFile for notifications and focus detection.
  */
 export const notifySystem = async (
   title: string,
   message: string,
   settingsService: SettingsService,
-  execFileFn: (
-    file: string,
-    args: readonly string[],
-    cb: (err: Error | null, stdout: string, stderr: string) => void,
-  ) => void,
+  execFileFn: typeof execFile,
 ): Promise<void> => {
-  const fn = execFileFn;
   const config = settingsService.getPermissionConfig();
-  const focused = await isTerminalFocused();
+  const focused = await isTerminalFocused(execFileFn);
 
   if (config.systemNotifications === "off") return;
   if (config.systemNotifications === "unfocused" && focused) return;
@@ -178,14 +176,14 @@ export const notifySystem = async (
       const tnArgs = ["-title", title, "-message", message];
       if (bundleId) tnArgs.push("-activate", bundleId);
 
-      fn("terminal-notifier", tnArgs, () => {});
+      execFileFn("terminal-notifier", tnArgs, () => {});
     } else if (process.platform === "linux") {
       const args = ["-a", "pi-permission-layers", title, message];
 
       if (config.systemNotifications === "persistent")
         args.push("-u", "critical");
 
-      fn("notify-send", args, () => {});
+      execFileFn("notify-send", args, () => {});
     }
   } catch {
     // Silently fail if notifications unavailable

@@ -2,6 +2,7 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+import { execFile } from "node:child_process";
 import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import {
@@ -30,14 +31,7 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
    * @param settingsService - Settings service (defaults to agent dir).
    * @param execFileFn - Child process execFile (defaults to node:child_process.execFile).
    */
-  constructor(
-    settingsService?: SettingsService,
-    execFileFn?: (
-      file: string,
-      args: readonly string[],
-      cb: (err: Error | null, stdout: string, stderr: string) => void,
-    ) => void,
-  ) {
+  constructor(settingsService?: SettingsService, execFileFn?: typeof execFile) {
     super(settingsService, execFileFn);
   }
 
@@ -72,7 +66,6 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
    */
   protected async onDangerous(
     command: string,
-
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
     await notifySystem(

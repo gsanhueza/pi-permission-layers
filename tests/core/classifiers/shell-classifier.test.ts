@@ -768,6 +768,14 @@ describe("edge: rm edge cases", () => {
     assertLevel("rm --recursive --force dir", "high", true);
     assertLevel("rm -rf --no-preserve-root /", "high", true);
   });
+
+  test("rm -r without -f is NOT dangerous", () => {
+    assertLevel("rm -r dir", "high", false);
+  });
+
+  test("rm -f without -r is NOT dangerous", () => {
+    assertLevel("rm -f file.txt", "high", false);
+  });
 });
 
 describe("edge: special characters in paths", () => {

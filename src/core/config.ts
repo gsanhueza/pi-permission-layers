@@ -37,20 +37,16 @@ const getCachedRegex = (pattern: string): RegExp => {
  * @returns A compiled RegExp, or a never-match regex on failure.
  */
 export const globToRegex = (pattern: string): RegExp => {
-  try {
-    if (/\*{5,}/.test(pattern)) {
-      return /(?!)/;
-    }
-
-    let regex = pattern
-      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*/g, ".*")
-      .replace(/\?/g, ".");
-
-    return new RegExp(`^${regex}$`, "i");
-  } catch {
+  if (/\*{5,}/.test(pattern)) {
     return /(?!)/;
   }
+
+  let regex = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+
+  return new RegExp(`^${regex}$`, "i");
 };
 
 /**
