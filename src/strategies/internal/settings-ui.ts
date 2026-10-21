@@ -7,6 +7,13 @@ import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
 import { SettingsService } from "../../core/settings";
 import { Notification } from "../../core/types";
 
+/**
+ * Create a SettingsList TUI widget for the /permission settings command.
+ *
+ * @param settingsService - Settings service to read/write config.
+ * @param done - Callback when the user finishes.
+ * @returns A SettingsList instance.
+ */
 export const createSettingsList = (
   settingsService: SettingsService,
   done: () => void,

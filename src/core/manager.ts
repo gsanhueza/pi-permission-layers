@@ -9,9 +9,22 @@ import {
 } from "./interfaces";
 import { Notification } from "./types";
 
+/**
+ * File-based settings persistence with atomic writes and validation.
+ */
 export class SettingsManager {
+  /**
+   * Create a SettingsManager for a specific settings file.
+   *
+   * @param settingsPath - Absolute path to the JSON settings file.
+   */
   constructor(private readonly settingsPath: string) {}
 
+  /**
+   * Load and parse the settings JSON file.
+   *
+   * @returns Parsed settings, or an empty object on failure.
+   */
   load(): Record<string, unknown> {
     try {
       return JSON.parse(fs.readFileSync(this.settingsPath, "utf-8"));
@@ -20,6 +33,12 @@ export class SettingsManager {
     }
   }
 
+  /**
+   * Save settings atomically (write to temp, then rename).
+   *
+   * @param settings - The settings object to persist.
+   * @throws Error on I/O failure.
+   */
   save(settings: Record<string, unknown>): void {
     const settingsPath = this.settingsPath;
     const dir = path.dirname(settingsPath);
@@ -43,6 +62,12 @@ export class SettingsManager {
     }
   }
 
+  /**
+   * Validate and sanitize a permission config object.
+   *
+   * @param raw - The raw config to validate.
+   * @returns A sanitized PermissionConfig.
+   */
   validate(raw: PermissionConfig): PermissionConfig {
     if (!raw || typeof raw !== "object") return {};
 
@@ -67,6 +92,7 @@ export class SettingsManager {
     return response;
   }
 
+  /** Validate the overrides section of a PermissionConfig. */
   private validateOverrides(
     raw: PermissionConfig,
   ): PermissionOverrides | undefined {
@@ -96,6 +122,7 @@ export class SettingsManager {
     return hasEntries ? response : undefined;
   }
 
+  /** Validate the tools section of a PermissionConfig. */
   private validateToolConfig(
     config: ToolPermissionConfig | undefined,
   ): ToolPermissionConfig | undefined {
@@ -121,6 +148,7 @@ export class SettingsManager {
     return hasEntries ? response : undefined;
   }
 
+  /** Validate the mcp section of a PermissionConfig. */
   private validateMcpConfig(
     config: McpPermissionConfig | undefined,
   ): McpPermissionConfig | undefined {
@@ -146,6 +174,7 @@ export class SettingsManager {
     return hasEntries ? response : undefined;
   }
 
+  /** Validate the prefixMappings array of a PermissionConfig. */
   private validatePrefixMappings(
     result: PermissionConfig,
   ): PermissionPrefixMapping[] {
@@ -171,10 +200,12 @@ export class SettingsManager {
     return response;
   }
 
+  /** Validate the quietStartup flag of a PermissionConfig. */
   private validateQuietStartup(raw: PermissionConfig): boolean | undefined {
     return raw.quietStartup;
   }
 
+  /** Validate the systemNotifications field of a PermissionConfig. */
   private validateSystemNotifications(
     raw: PermissionConfig,
   ): Notification | undefined {

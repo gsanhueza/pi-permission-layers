@@ -11,6 +11,12 @@ import { LEVELS } from "../../core/types";
 // SESSION INITIALIZATION
 // ============================================================================
 
+/**
+ * Initialize session state from environment variables and global settings.
+ *
+ * @param state - The PermissionState to populate.
+ * @param settingsService - Settings service for loading global defaults.
+ */
 export const initializeSessionState = (
   state: PermissionState,
   settingsService: SettingsService,

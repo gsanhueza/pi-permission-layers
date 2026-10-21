@@ -7,6 +7,12 @@ import { Classification, PermissionConfig } from "./interfaces";
 let regexCache: Map<string, RegExp> = new Map();
 const MAX_REGEX_CACHE_SIZE = 500;
 
+/**
+ * Get a compiled RegExp from cache, building and caching if missing.
+ *
+ * @param pattern - The glob pattern to compile.
+ * @returns A compiled RegExp instance.
+ */
 const getCachedRegex = (pattern: string): RegExp => {
   let regex = regexCache.get(pattern);
   if (!regex) {
@@ -24,6 +30,12 @@ const getCachedRegex = (pattern: string): RegExp => {
 // PATTERN MATCHING
 // ============================================================================
 
+/**
+ * Convert a glob pattern string to a RegExp.
+ *
+ * @param pattern - The glob pattern (supports `*` and `?`).
+ * @returns A compiled RegExp, or a never-match regex on failure.
+ */
 export const globToRegex = (pattern: string): RegExp => {
   try {
     if (/\*{5,}/.test(pattern)) {
@@ -41,6 +53,13 @@ export const globToRegex = (pattern: string): RegExp => {
   }
 };
 
+/**
+ * Test whether a command matches any of the given glob patterns.
+ *
+ * @param command - The command string to test.
+ * @param patterns - Array of glob patterns, or null/undefined.
+ * @returns True if any pattern matches.
+ */
 export const matchesAnyPattern = (
   command: string,
   patterns: string[] | undefined | null,
@@ -58,6 +77,13 @@ export const matchesAnyPattern = (
 // PREFIX MAPPINGS
 // ============================================================================
 
+/**
+ * Apply configured prefix mappings to normalize a command before classification.
+ *
+ * @param command - The raw command string.
+ * @param mappings - Prefix mappings to apply.
+ * @returns The normalized command.
+ */
 export const applyPrefixMappings = (
   command: string,
   mappings: PermissionConfig["prefixMappings"],
@@ -99,6 +125,13 @@ export const applyPrefixMappings = (
 // OVERRIDE CHECKING
 // ============================================================================
 
+/**
+ * Check whether the command matches any override patterns.
+ *
+ * @param command - The command to check.
+ * @param overrides - Override patterns by permission level.
+ * @returns Classification if an override matches, null otherwise.
+ */
 export const checkOverrides = (
   command: string,
   overrides: PermissionConfig["overrides"],

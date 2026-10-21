@@ -1,5 +1,11 @@
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
+/**
+ * Determine whether the current session has an interactive UI.
+ *
+ * @param ctx - Extension context.
+ * @returns True if an interactive UI is available.
+ */
 export const hasInteractiveUI = (ctx: ExtensionContext): boolean => {
   // If pi says no UI, respect that
   if (!ctx?.hasUI) return false;
@@ -10,6 +16,12 @@ export const hasInteractiveUI = (ctx: ExtensionContext): boolean => {
   return true;
 };
 
+/**
+ * Extract the --mode argument from the process argv.
+ *
+ * @param argv - The argv array (defaults to process.argv).
+ * @returns The mode string, or undefined.
+ */
 const getPiModeFromArgv = (
   argv: string[] = process.argv,
 ): string | undefined => {

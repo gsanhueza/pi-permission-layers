@@ -26,6 +26,14 @@ export const notify = (
   ctx.ui.notify(`${prefix}${message}`, level);
 };
 
+/**
+ * Handle the /permission config subcommand (show / reset).
+ *
+ * @param args - The subcommand arguments (e.g. "show", "reset").
+ * @param ctx - Extension command context.
+ * @param prefix - Optional message prefix.
+ * @param deps - Dependency injection for testability.
+ */
 export const handleConfigSubcommand = async (
   args: string,
   ctx: ExtensionCommandContext,

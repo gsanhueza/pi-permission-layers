@@ -24,6 +24,12 @@ const LEVEL_COLORS: Record<PermissionLevel, string> = {
   bypassed: DIM,
 };
 
+/**
+ * Generate a colored status text string for a permission level.
+ *
+ * @param level - The permission level.
+ * @returns Formatted ANSI-colored status text.
+ */
 export const getStatusText = (level: PermissionLevel): string => {
   const info = LEVEL_INFO[level];
   const color = LEVEL_COLORS[level];
@@ -34,6 +40,15 @@ export const getStatusText = (level: PermissionLevel): string => {
 // MODE DETECTION
 // ============================================================================
 
+/**
+ * Determine whether quiet-startup mode is enabled.
+ *
+ * Checks environment variables, CLI flags, and config.
+ *
+ * @param _ctx - Extension context (unused, kept for API consistency).
+ * @param settingsService - Settings service for config lookup.
+ * @returns True if quiet mode is enabled.
+ */
 export const isQuietMode = (
   _ctx: ExtensionContext,
   settingsService: SettingsService,
@@ -130,6 +145,16 @@ const isTerminalFocused = async (): Promise<boolean> => {
 // SYSTEM NOTIFICATIONS
 // ============================================================================
 
+/**
+ * Send a system notification (OS-level) when permission is required.
+ *
+ * Respects the systemNotifications config and terminal-focus detection.
+ *
+ * @param title - Notification title.
+ * @param message - Notification body.
+ * @param settingsService - Settings service for config lookup.
+ * @param execFileFn - Child process execFile for spawning notifications.
+ */
 export const notifySystem = async (
   title: string,
   message: string,

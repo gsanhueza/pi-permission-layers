@@ -27,6 +27,13 @@ export interface McpToolInput {
   [key: string]: unknown;
 }
 
+/**
+ * Parse MCP tool input and resolve its permission classification.
+ *
+ * @param input - The raw MCP tool input object.
+ * @param mcpConfig - User-provided MCP permission config.
+ * @returns Parsed and classified MCP tool info.
+ */
 export const parseMcpInput = (
   input: McpToolInput,
   mcpConfig?: McpPermissionConfig,

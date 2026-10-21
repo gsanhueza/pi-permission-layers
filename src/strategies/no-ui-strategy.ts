@@ -15,6 +15,12 @@ const PREFIX = "[pi-permission-layers] ";
  * No-UI strategy — returns block messages, no prompts or status bar.
  */
 export class NoUIPermissionStrategy extends BasePermissionStrategy {
+  /**
+   * Create a NoUIPermissionStrategy with optional overrides for testing.
+   *
+   * @param settingsService - Settings service (defaults to agent dir).
+   * @param execFileFn - Child process execFile (defaults to node:child_process.execFile).
+   */
   constructor(
     settingsService?: SettingsService,
     execFileFn?: (
@@ -28,6 +34,13 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
 
   // ── State ────────────────────────────────────────────────────────
 
+  /**
+   * Override: always session-only in no-UI mode.
+   *
+   * @param level - The new permission level.
+   * @param _saveGlobally - Ignored in no-UI mode.
+   * @param _ctx - Ignored in no-UI mode.
+   */
   override setLevel(
     level: PermissionLevel,
     _saveGlobally: boolean,
@@ -38,6 +51,12 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
     this.state.isSessionOnly = true;
   }
 
+  /**
+   * Override: always session-only in no-UI mode.
+   *
+   * @param mode - The new permission mode.
+   * @param _saveGlobally - Ignored in no-UI mode.
+   */
   override setMode(mode: PermissionMode, _saveGlobally: boolean): void {
     // No-UI always session-only
     this.state.permissionMode = mode;
@@ -46,6 +65,7 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
 
   // ── Presentation hooks ───────────────────────────────────────────
 
+  /** Return a block message for dangerous commands in no-UI mode. */
   protected async onDangerous(
     command: string,
     _ctx: ExtensionContext,
@@ -57,6 +77,15 @@ User can re-run with: PI_PERMISSION_LEVEL=bypassed pi -p "..."`,
     };
   }
 
+  /**
+   * Return a block message when permission is insufficient in no-UI mode.
+   *
+   * @param requiredLevel - The level that was required.
+   * @param message - The short message.
+   * @param _details - The detailed description (unused in no-UI).
+   * @param _ctx - Ignored in no-UI mode.
+   * @returns A block result with a helpful error message.
+   */
   protected async onRequest(
     requiredLevel: PermissionLevel,
     message: string,
@@ -73,14 +102,17 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     };
   }
 
+  /** No-op: no-UI mode has no notifications for allowed MCP calls. */
   protected onMcpAllowed(_toolName: string, _ctx: ExtensionContext): void {
     // No-UI: nothing to notify (allowed by level check)
   }
 
+  /** No-op: no-UI mode has no session-start notifications. */
   protected onSessionStart(_ctx: ExtensionContext): void {
     // No-UI: nothing to notify
   }
 
+  /** Notify the user of their current permission level in no-UI mode. */
   protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
     notify(
       ctx,
@@ -90,6 +122,7 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     );
   }
 
+  /** Set the level (session-only) and notify the user in no-UI mode. */
   protected async onSetLevel(
     level: PermissionLevel,
 
@@ -99,6 +132,7 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     notify(ctx, `Permission: ${LEVEL_INFO[level].label}`, "info", PREFIX);
   }
 
+  /** Notify the user of their current permission mode in no-UI mode. */
   protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
     notify(
       ctx,
@@ -108,6 +142,7 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     );
   }
 
+  /** Set the mode (session-only) and notify the user in no-UI mode. */
   protected async onSetMode(
     mode: PermissionMode,
 
@@ -122,6 +157,7 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     );
   }
 
+  /** No-op: settings UI is not available in no-UI mode. */
   protected async onSettings(_ctx: ExtensionCommandContext): Promise<void> {
     // No-UI: settings not available
   }

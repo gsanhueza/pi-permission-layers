@@ -33,6 +33,12 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     cb: (err: Error | null, stdout: string, stderr: string) => void,
   ) => void;
 
+  /**
+   * Create a BasePermissionStrategy with optional overrides for testing.
+   *
+   * @param settingsService - Settings service (defaults to agent dir).
+   * @param execFileFn - Child process execFile (defaults to node:child_process.execFile).
+   */
   constructor(
     settingsService?: SettingsService,
     execFileFn?: (
@@ -49,6 +55,11 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   // ── State ────────────────────────────────────────────────────────
 
+  /**
+   * Create a fresh permission state with defaults and global overrides.
+   *
+   * @returns The initialized PermissionState.
+   */
   createInitialState(): PermissionState {
     const state: PermissionState = {
       currentLevel: "minimal",
@@ -61,6 +72,13 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     return state;
   }
 
+  /**
+   * Set the permission level, optionally persisting globally.
+   *
+   * @param level - The permission level to set.
+   * @param saveGlobally - Whether to persist globally.
+   * @param _ctx - Extension context (unused, kept for override compatibility).
+   */
   setLevel(
     level: PermissionLevel,
     saveGlobally: boolean,
@@ -73,6 +91,12 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     }
   }
 
+  /**
+   * Set the permission mode, optionally persisting globally.
+   *
+   * @param mode - The permission mode to set.
+   * @param saveGlobally - Whether to persist globally.
+   */
   setMode(mode: PermissionMode, saveGlobally: boolean): void {
     this.state.permissionMode = mode;
     this.state.isModeSessionOnly = !saveGlobally;
@@ -83,6 +107,11 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
 
   // ── Session ──────────────────────────────────────────────────────
 
+  /**
+   * Handle session start: initialize state and delegate to the presentation hook.
+   *
+   * @param ctx - Extension context.
+   */
   handleSessionStart(ctx: ExtensionContext): void {
     initializeSessionState(this.state, this.settingsService);
     this.onSessionStart(ctx);
@@ -109,6 +138,13 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     ctx: ExtensionContext,
   ): void;
 
+  /**
+   * Classify and handle a bash tool call.
+   *
+   * @param command - The shell command to classify.
+   * @param ctx - Extension context.
+   * @returns Block result if denied, undefined to allow.
+   */
   async handleBashToolCall(
     command: string,
     ctx: ExtensionContext,
@@ -129,6 +165,13 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     );
   }
 
+  /**
+   * Classify and handle an MCP tool call.
+   *
+   * @param input - The MCP tool input.
+   * @param ctx - Extension context.
+   * @returns Block result if denied, undefined to allow.
+   */
   async handleMcpToolCall(
     input: McpToolInput,
     ctx: ExtensionContext,
@@ -156,6 +199,14 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     );
   }
 
+  /**
+   * Classify and handle a write/edit tool call.
+   *
+   * @param toolName - The tool name ("write" or "edit").
+   * @param filePath - The file path being written/edited.
+   * @param ctx - Extension context.
+   * @returns Block result if denied, undefined to allow.
+   */
   async handleWriteToolCall(
     toolName: string,
     filePath: string,
@@ -176,6 +227,13 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     );
   }
 
+  /**
+   * Route a tool call event to the appropriate handler.
+   *
+   * @param event - The tool call event.
+   * @param ctx - Extension context.
+   * @returns Block result if denied, undefined to allow.
+   */
   async handleToolCall(
     event: ToolCallEvent,
     ctx: ExtensionContext,
@@ -206,6 +264,16 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     );
   }
 
+  /**
+   * Core decision tree for tool permission checks.
+   *
+   * @param classification - The tool classification, or null for unknown.
+   * @param toolName - The tool name for messaging.
+   * @param message - Short message for the user.
+   * @param details - Detailed description for the user.
+   * @param ctx - Extension context.
+   * @returns Block result if denied, undefined to allow.
+   */
   protected async checkAndHandleTool(
     classification: Classification | null,
     toolName: string,
@@ -246,6 +314,12 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     return "";
   }
 
+  /**
+   * Handle the /permission command with subcommand routing.
+   *
+   * @param args - The command arguments.
+   * @param ctx - Extension command context.
+   */
   async handlePermissionCommand(
     args: string,
     ctx: ExtensionCommandContext,
@@ -278,6 +352,12 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     await this.onViewLevel(ctx);
   }
 
+  /**
+   * Handle the /permission-mode command.
+   *
+   * @param args - The command arguments.
+   * @param ctx - Extension command context.
+   */
   async handlePermissionModeCommand(
     args: string,
     ctx: ExtensionCommandContext,

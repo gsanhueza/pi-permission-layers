@@ -24,6 +24,12 @@ import {
  * UI strategy — uses prompts, status bar, and system notifications.
  */
 export class UIPermissionStrategy extends BasePermissionStrategy {
+  /**
+   * Create a UIPermissionStrategy with optional overrides for testing.
+   *
+   * @param settingsService - Settings service (defaults to agent dir).
+   * @param execFileFn - Child process execFile (defaults to node:child_process.execFile).
+   */
   constructor(
     settingsService?: SettingsService,
     execFileFn?: (
@@ -37,6 +43,13 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
 
   // ── State ────────────────────────────────────────────────────────
 
+  /**
+   * Override to update the status bar when the level changes.
+   *
+   * @param level - The new permission level.
+   * @param saveGlobally - Whether the change is persistent.
+   * @param ctx - Extension context for status bar update.
+   */
   override setLevel(
     level: PermissionLevel,
     saveGlobally: boolean,
@@ -50,6 +63,7 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
 
   // ── Presentation hooks ───────────────────────────────────────────
 
+  /** Present a dangerous-command prompt to the user. */
   protected async onDangerous(
     command: string,
 
@@ -85,6 +99,7 @@ Use /permission-mode ask to enable confirmations.`,
     return undefined;
   }
 
+  /** Present a permission request prompt to the user. */
   protected async onRequest(
     requiredLevel: PermissionLevel,
     message: string,
@@ -135,10 +150,12 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     };
   }
 
+  /** Notify the user that an MCP tool call was allowed. */
   protected onMcpAllowed(toolName: string, ctx: ExtensionContext): void {
     notify(ctx, `MCP tool: ${toolName}`);
   }
 
+  /** Display session-start status and notifications. */
   protected onSessionStart(ctx: ExtensionContext): void {
     if (ctx.ui?.setStatus) {
       ctx.ui.setStatus("authority", getStatusText(this.state.currentLevel));
@@ -156,6 +173,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     }
   }
 
+  /** Present a level-selection dialog to the user. */
   protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
     const options = LEVELS.map((level) => {
       const info = LEVEL_INFO[level];
@@ -182,6 +200,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`);
   }
 
+  /** Prompt the user for scope (session vs global) then set the level. */
   protected async onSetLevel(
     level: PermissionLevel,
 
@@ -199,6 +218,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     notify(ctx, `Permission: ${LEVEL_INFO[level].label}${saveMsg}`);
   }
 
+  /** Present a mode-selection dialog to the user. */
   protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
     const options = PERMISSION_MODES.map((mode) => {
       const info = PERMISSION_MODE_INFO[mode];
@@ -230,6 +250,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     );
   }
 
+  /** Prompt the user for scope (session vs global) then set the mode. */
   protected async onSetMode(
     mode: PermissionMode,
 
@@ -250,6 +271,7 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     );
   }
 
+  /** Open the settings UI for quiet-startup and notifications. */
   protected async onSettings(ctx: ExtensionCommandContext): Promise<void> {
     await ctx.ui.custom<void>((_tui, _theme, _keybindings, done) =>
       createSettingsList(this.settingsService, () => done()),

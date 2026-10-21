@@ -9,6 +9,13 @@ import type { PermissionState } from "../../core/interfaces";
 import type { PermissionLevel } from "../../core/types";
 import { LEVEL_INDEX } from "../../core/types";
 
+/**
+ * Check whether the current permission state allows the required level.
+ *
+ * @param state - The current permission state.
+ * @param requiredLevel - The level required by the operation.
+ * @returns True if allowed, false if insufficient.
+ */
 export const checkPermission = (
   state: PermissionState,
   requiredLevel: PermissionLevel,

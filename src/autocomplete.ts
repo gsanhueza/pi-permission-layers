@@ -6,6 +6,12 @@ import {
   PERMISSION_MODES,
 } from "./core/types";
 
+/**
+ * Provide autocomplete suggestions for the /permission command.
+ *
+ * @param prefix - The partial input typed by the user.
+ * @returns Autocomplete items, or null if no suggestions.
+ */
 export const getPermissionCompletions = (
   prefix: string,
 ): AutocompleteItem[] | null => {
@@ -60,6 +66,12 @@ export const getPermissionCompletions = (
   return filtered.length > 0 ? filtered : null;
 };
 
+/**
+ * Provide autocomplete suggestions for the /permission-mode command.
+ *
+ * @param prefix - The partial input typed by the user.
+ * @returns Autocomplete items, or null if no suggestions.
+ */
 export const getPermissionModeCompletions = (
   prefix: string,
 ): AutocompleteItem[] | null => {
