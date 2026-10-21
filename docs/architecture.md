@@ -116,7 +116,8 @@ Both share the same permission algorithm via `BasePermissionStrategy` (abstract 
 - `handleBashToolCall()`, `handleMcpToolCall()`, `handleWriteToolCall()`, `handleToolCall()`, `checkAndHandleTool()`
 - `handlePermissionCommand()`, `handlePermissionModeCommand()`
 - `setLevel()`, `setMode()`, `createInitialState()`
-- Abstract hooks that concrete strategies implement: `onDangerous()`, `onRequest()`, `onMcpAllowed()`, `onSessionStart()`, `onViewLevel()`, `onSetLevel()`, `onViewMode()`, `onSetMode()`, `onSettings()`, `configPrefix()`
+- Abstract hooks that concrete strategies implement: `onDangerous()`, `onRequest()`, `onViewLevel()`, `onSetLevel()`, `onViewMode()`, `onSetMode()`
+- Default no-op hooks (override when needed): `onMcpAllowed()`, `onSessionStart()`, `onSettings()`
 
 ### `strategies/internal/` — Internal Utilities
 

@@ -117,7 +117,8 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     this.onSessionStart(ctx);
   }
 
-  protected abstract onSessionStart(ctx: ExtensionContext): void;
+  /** No-op default. Override in subclasses for session-start notifications. */
+  protected onSessionStart(_ctx: ExtensionContext): void {}
 
   // ── Tool handlers ────────────────────────────────────────────────
 
@@ -133,10 +134,8 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined>;
 
-  protected abstract onMcpAllowed(
-    toolName: string,
-    ctx: ExtensionContext,
-  ): void;
+  /** No-op default. Override in subclasses for MCP-allowed notifications. */
+  protected onMcpAllowed(_toolName: string, _ctx: ExtensionContext): void {}
 
   /**
    * Classify and handle a bash tool call.
@@ -307,7 +306,8 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     mode: PermissionMode,
     ctx: ExtensionCommandContext,
   ): Promise<void>;
-  protected abstract onSettings(ctx: ExtensionCommandContext): Promise<void>;
+  /** No-op default. Override in subclasses for settings UI. */
+  protected async onSettings(_ctx: ExtensionCommandContext): Promise<void> {}
 
   /** Returns the prefix for no-UI messages (empty string for UI). */
   protected configPrefix(): string {

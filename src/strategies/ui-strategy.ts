@@ -44,10 +44,10 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
   // ── State ────────────────────────────────────────────────────────
 
   /**
-   * Override to update the status bar when the level changes.
+   * Set the permission level and update the status bar.
    *
-   * @param level - The new permission level.
-   * @param saveGlobally - Whether the change is persistent.
+   * @param level - The permission level to set.
+   * @param saveGlobally - Whether to persist globally.
    * @param ctx - Extension context for status bar update.
    */
   override setLevel(
@@ -63,7 +63,13 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
 
   // ── Presentation hooks ───────────────────────────────────────────
 
-  /** Present a dangerous-command prompt to the user. */
+  /**
+   * Present a dangerous-command prompt with system notification.
+   *
+   * @param command - The dangerous command string.
+   * @param ctx - Extension context for the select prompt.
+   * @returns Block result if denied, undefined to allow.
+   */
   protected async onDangerous(
     command: string,
 
@@ -99,7 +105,15 @@ Use /permission-mode ask to enable confirmations.`,
     return undefined;
   }
 
-  /** Present a permission request prompt to the user. */
+  /**
+   * Present a permission request prompt with system notification.
+   *
+   * @param requiredLevel - The permission level required.
+   * @param message - Short description for the prompt.
+   * @param _details - Detailed description (unused in prompt).
+   * @param ctx - Extension context for the select prompt.
+   * @returns Block result if denied, undefined to allow.
+   */
   protected async onRequest(
     requiredLevel: PermissionLevel,
     message: string,
@@ -150,12 +164,21 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     };
   }
 
-  /** Notify the user that an MCP tool call was allowed. */
+  /**
+   * Notify the user that an MCP tool call was allowed.
+   *
+   * @param toolName - The MCP tool name.
+   * @param ctx - Extension context for the notification.
+   */
   protected onMcpAllowed(toolName: string, ctx: ExtensionContext): void {
     notify(ctx, `MCP tool: ${toolName}`);
   }
 
-  /** Display session-start status and notifications. */
+  /**
+   * Display session-start status bar and notifications.
+   *
+   * @param ctx - Extension context for status bar and notifications.
+   */
   protected onSessionStart(ctx: ExtensionContext): void {
     if (ctx.ui?.setStatus) {
       ctx.ui.setStatus("authority", getStatusText(this.state.currentLevel));
@@ -173,7 +196,11 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     }
   }
 
-  /** Present a level-selection dialog to the user. */
+  /**
+   * Present a level-selection dialog and update the level.
+   *
+   * @param ctx - Extension command context for the select prompts.
+   */
   protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
     const options = LEVELS.map((level) => {
       const info = LEVEL_INFO[level];
@@ -200,7 +227,12 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     notify(ctx, `Permission: ${LEVEL_INFO[newLevel].label}${saveMsg}`);
   }
 
-  /** Prompt the user for scope (session vs global) then set the level. */
+  /**
+   * Prompt the user for scope (session vs global) then set the level.
+   *
+   * @param level - The permission level to set.
+   * @param ctx - Extension command context for the select prompt.
+   */
   protected async onSetLevel(
     level: PermissionLevel,
 
@@ -218,7 +250,11 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     notify(ctx, `Permission: ${LEVEL_INFO[level].label}${saveMsg}`);
   }
 
-  /** Present a mode-selection dialog to the user. */
+  /**
+   * Present a mode-selection dialog and update the mode.
+   *
+   * @param ctx - Extension command context for the select prompts.
+   */
   protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
     const options = PERMISSION_MODES.map((mode) => {
       const info = PERMISSION_MODE_INFO[mode];
@@ -250,7 +286,12 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     );
   }
 
-  /** Prompt the user for scope (session vs global) then set the mode. */
+  /**
+   * Prompt the user for scope (session vs global) then set the mode.
+   *
+   * @param mode - The permission mode to set.
+   * @param ctx - Extension command context for the select prompt.
+   */
   protected async onSetMode(
     mode: PermissionMode,
 
@@ -271,7 +312,11 @@ Use /permission ${requiredLevel} or /permission-mode ask to enable prompts.`,
     );
   }
 
-  /** Open the settings UI for quiet-startup and notifications. */
+  /**
+   * Open the settings UI for quiet-startup and notifications.
+   *
+   * @param ctx - Extension command context for the custom UI.
+   */
   protected async onSettings(ctx: ExtensionCommandContext): Promise<void> {
     await ctx.ui.custom<void>((_tui, _theme, _keybindings, done) =>
       createSettingsList(this.settingsService, () => done()),

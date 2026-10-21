@@ -35,9 +35,9 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
   // ── State ────────────────────────────────────────────────────────
 
   /**
-   * Override: always session-only in no-UI mode.
+   * Set the permission level (always session-only in no-UI mode).
    *
-   * @param level - The new permission level.
+   * @param level - The permission level to set.
    * @param _saveGlobally - Ignored in no-UI mode.
    * @param _ctx - Ignored in no-UI mode.
    */
@@ -52,9 +52,9 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
   }
 
   /**
-   * Override: always session-only in no-UI mode.
+   * Set the permission mode (always session-only in no-UI mode).
    *
-   * @param mode - The new permission mode.
+   * @param mode - The permission mode to set.
    * @param _saveGlobally - Ignored in no-UI mode.
    */
   override setMode(mode: PermissionMode, _saveGlobally: boolean): void {
@@ -65,7 +65,13 @@ export class NoUIPermissionStrategy extends BasePermissionStrategy {
 
   // ── Presentation hooks ───────────────────────────────────────────
 
-  /** Return a block message for dangerous commands in no-UI mode. */
+  /**
+   * Return a block message for dangerous commands in no-UI mode.
+   *
+   * @param command - The dangerous command string.
+   * @param _ctx - Ignored in no-UI mode.
+   * @returns A block result with a helpful error message.
+   */
   protected async onDangerous(
     command: string,
     _ctx: ExtensionContext,
@@ -102,17 +108,11 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     };
   }
 
-  /** No-op: no-UI mode has no notifications for allowed MCP calls. */
-  protected onMcpAllowed(_toolName: string, _ctx: ExtensionContext): void {
-    // No-UI: nothing to notify (allowed by level check)
-  }
-
-  /** No-op: no-UI mode has no session-start notifications. */
-  protected onSessionStart(_ctx: ExtensionContext): void {
-    // No-UI: nothing to notify
-  }
-
-  /** Notify the user of their current permission level in no-UI mode. */
+  /**
+   * Notify the user of their current permission level in no-UI mode.
+   *
+   * @param ctx - Extension command context for the notification.
+   */
   protected async onViewLevel(ctx: ExtensionCommandContext): Promise<void> {
     notify(
       ctx,
@@ -122,7 +122,12 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     );
   }
 
-  /** Set the level (session-only) and notify the user in no-UI mode. */
+  /**
+   * Set the level (session-only) and notify the user in no-UI mode.
+   *
+   * @param level - The permission level to set.
+   * @param ctx - Extension command context for the notification.
+   */
   protected async onSetLevel(
     level: PermissionLevel,
 
@@ -132,7 +137,11 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     notify(ctx, `Permission: ${LEVEL_INFO[level].label}`, "info", PREFIX);
   }
 
-  /** Notify the user of their current permission mode in no-UI mode. */
+  /**
+   * Notify the user of their current permission mode in no-UI mode.
+   *
+   * @param ctx - Extension command context for the notification.
+   */
   protected async onViewMode(ctx: ExtensionCommandContext): Promise<void> {
     notify(
       ctx,
@@ -142,7 +151,12 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
     );
   }
 
-  /** Set the mode (session-only) and notify the user in no-UI mode. */
+  /**
+   * Set the mode (session-only) and notify the user in no-UI mode.
+   *
+   * @param mode - The permission mode to set.
+   * @param ctx - Extension command context for the notification.
+   */
   protected async onSetMode(
     mode: PermissionMode,
 
@@ -155,11 +169,6 @@ User can re-run with: PI_PERMISSION_LEVEL=${requiredLevel} pi -p "..."`,
       "info",
       PREFIX,
     );
-  }
-
-  /** No-op: settings UI is not available in no-UI mode. */
-  protected async onSettings(_ctx: ExtensionCommandContext): Promise<void> {
-    // No-UI: settings not available
   }
 
   protected override configPrefix(): string {
