@@ -155,8 +155,8 @@ Global settings are stored in `~/.pi/agent/settings.json`:
 | Option                | Type                                           | Default       | Description                                                                                                                                                                                  |
 | --------------------- | ---------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `overrides`           | `PermissionOverrides`                          | `{}`          | Per-level glob patterns for shell command overrides                                                                                                                                          |
-| `tools`               | `ToolPermissionConfig`                         | `{}`          | Per-level tool name assignments (delta model — only specify what you want to change)                                                                                                         |
-| `mcp`                 | `McpPermissionConfig`                          | `{}`          | Per-level MCP tool/mode name assignments (delta model — only specify what you want to change)                                                                                                |
+| `tools`               | `ToolPermissionConfig`                         | `{}`          | Per-level tool name assignments with glob support (delta model — only specify what you want to change)                                                                                       |
+| `mcp`                 | `McpPermissionConfig`                          | `{}`          | Per-level MCP tool/mode name assignments with glob support (delta model — only specify what you want to change)                                                                              |
 | `prefixMappings`      | `PermissionPrefixMapping[]`                    | `[]`          | Normalize version-manager commands to their base tools                                                                                                                                       |
 | `quietStartup`        | `boolean`                                      | `false`       | Suppress the startup notification message                                                                                                                                                    |
 | `systemNotifications` | `"off" \| "on" \| "unfocused" \| "persistent"` | `"unfocused"` | Control OS notifications (`"off"` = fully disabled, `"unfocused"` = only when terminal is not focused, `"on"` = always show, `"persistent"` = always show with critical/persistent priority) |
@@ -207,7 +207,7 @@ Override priority (highest to lowest):
 
 ### Tool Permission Config (`tools`)
 
-Assign permission levels to individual tool names. This uses a **delta/override model**: only specify what you want to change — unmentioned tools keep their default levels.
+Assign permission levels to individual tool names. Supports **glob patterns** (`*`, `?`) matching the same way as `overrides`. This uses a **delta/override model**: only specify what you want to change — unmentioned tools keep their default levels.
 
 | Level       | Default tools                | Description                           |
 | ----------- | ---------------------------- | ------------------------------------- |
@@ -228,7 +228,7 @@ Assign permission levels to individual tool names. This uses a **delta/override 
 
 ### MCP Permission Config (`mcp`)
 
-Assign permission levels to MCP tools and modes. MCP config supports two types of entries:
+Assign permission levels to MCP tools and modes. Supports **glob patterns** (`*`, `?`) matching the same way as `overrides`. MCP config supports two types of entries:
 
 - **Mode names** (`search`, `describe`, `list`, `status`, `connect`, `call`, `action`) — match against the call's mode
 - **Tool names** (`serper_search`, `github_list_commits`) — match against the specific tool

@@ -214,3 +214,69 @@ describe("integration: tool config with defaults", () => {
     expect(resolveToolLevel("unknown", {})).toBeNull();
   });
 });
+
+// ============================================================================
+// Glob pattern matching
+// ============================================================================
+
+describe("glob patterns in tool config", () => {
+  test("wildcard * matches any suffix", () => {
+    const config: ToolPermissionConfig = { minimal: ["github_*"] };
+    expect(resolveToolLevel("github_list_commits", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveToolLevel("github_create_issue", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+  });
+
+  test("wildcard ? matches single character", () => {
+    const config: ToolPermissionConfig = { low: ["read?"] };
+    expect(resolveToolLevel("reada", config)).toEqual({
+      level: "low",
+      dangerous: false,
+    });
+    // read matches defaults.minimal (not overridden by user config)
+    expect(resolveToolLevel("read", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveToolLevel("readab", config)).toBeNull();
+  });
+
+  test("glob in multiple levels — most restrictive wins", () => {
+    const config: ToolPermissionConfig = {
+      minimal: ["github_*"],
+      low: ["github_*"],
+    };
+    expect(resolveToolLevel("github_list_commits", config)).toEqual({
+      level: "low",
+      dangerous: false,
+    });
+  });
+
+  test("glob with dangerous", () => {
+    const config: ToolPermissionConfig = { dangerous: ["unsafe_*"] };
+    expect(resolveToolLevel("unsafe_rm", config)).toEqual({
+      level: "high",
+      dangerous: true,
+    });
+  });
+
+  test("exact match still works alongside globs", () => {
+    const config: ToolPermissionConfig = {
+      minimal: ["github_*"],
+      low: ["read"],
+    };
+    expect(resolveToolLevel("github_list", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveToolLevel("read", config)).toEqual({
+      level: "low",
+      dangerous: false,
+    });
+  });
+});

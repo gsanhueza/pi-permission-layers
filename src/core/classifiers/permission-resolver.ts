@@ -14,6 +14,7 @@ import type {
   McpPermissionConfig,
   ToolPermissionConfig,
 } from "../interfaces";
+import { matchesAnyPattern } from "../config";
 
 // Ordered from most restrictive to least restrictive (dangerous is handled separately)
 const CONFIG_LEVELS: ("high" | "medium" | "low" | "minimal")[] = [
@@ -42,12 +43,12 @@ export const resolveLevel = (
   // 1. Check user config (most restrictive level wins)
   if (config) {
     // Check dangerous first (highest priority)
-    if (config.dangerous && config.dangerous.includes(name)) {
+    if (config.dangerous && matchesAnyPattern(name, config.dangerous)) {
       return { level: "high", dangerous: true };
     }
     for (const level of CONFIG_LEVELS) {
       const entries = config[level];
-      if (entries && entries.includes(name)) {
+      if (entries && matchesAnyPattern(name, entries)) {
         return { level, dangerous: false };
       }
     }
@@ -55,12 +56,12 @@ export const resolveLevel = (
 
   // 2. Fall back to defaults
   // Check dangerous first
-  if (defaults.dangerous && defaults.dangerous.includes(name)) {
+  if (defaults.dangerous && matchesAnyPattern(name, defaults.dangerous)) {
     return { level: "high", dangerous: true };
   }
   for (const level of CONFIG_LEVELS) {
     const entries = defaults[level];
-    if (entries && entries.includes(name)) {
+    if (entries && matchesAnyPattern(name, entries)) {
       return { level, dangerous: false };
     }
   }

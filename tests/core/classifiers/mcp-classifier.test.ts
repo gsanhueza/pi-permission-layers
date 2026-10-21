@@ -215,3 +215,67 @@ describe("integration: MCP config with defaults", () => {
     expect(resolveMcpLevel("unknown", "call", {})).toBeNull();
   });
 });
+
+// ============================================================================
+// Glob pattern matching
+// ============================================================================
+
+describe("glob patterns in MCP config", () => {
+  test("wildcard * matches any suffix", () => {
+    const config: McpPermissionConfig = { minimal: ["github_*"] };
+    expect(resolveMcpLevel("github_list_commits", "call", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveMcpLevel("github_create_issue", "call", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+  });
+
+  test("wildcard ? matches single character", () => {
+    const config: McpPermissionConfig = { minimal: ["github_iss?"] };
+    expect(resolveMcpLevel("github_isst", "call", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveMcpLevel("github_issue", "call", config)).toBeNull();
+  });
+
+  test("glob in multiple levels — most restrictive wins", () => {
+    const config: McpPermissionConfig = {
+      minimal: ["github_*"],
+      low: ["github_*"],
+    };
+    expect(resolveMcpLevel("github_list_commits", "call", config)).toEqual({
+      level: "low",
+      dangerous: false,
+    });
+  });
+
+  test("tool glob + mode match — tool glob wins", () => {
+    const config: McpPermissionConfig = {
+      minimal: ["github_*"],
+      low: ["call"],
+    };
+    expect(resolveMcpLevel("github_list_commits", "call", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+  });
+
+  test("exact match still works alongside globs", () => {
+    const config: McpPermissionConfig = {
+      minimal: ["github_*"],
+      low: ["serper_search"],
+    };
+    expect(resolveMcpLevel("github_list", "call", config)).toEqual({
+      level: "minimal",
+      dangerous: false,
+    });
+    expect(resolveMcpLevel("serper_search", "call", config)).toEqual({
+      level: "low",
+      dangerous: false,
+    });
+  });
+});
