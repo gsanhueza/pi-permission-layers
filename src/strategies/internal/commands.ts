@@ -2,11 +2,7 @@
  * Shared command logic used by both UI and no-UI handlers.
  */
 
-import {
-  ExtensionCommandContext,
-  getAgentDir,
-} from "@earendil-works/pi-coding-agent";
-import { invalidateConfigCache } from "../../core/config";
+import { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { SettingsService } from "../../core/settings";
 
 // ============================================================================
@@ -36,17 +32,13 @@ export const handleConfigSubcommand = async (
   prefix = "",
   deps: {
     settingsService: SettingsService;
-    invalidateConfigCache: () => void;
-  } = {
-    settingsService: new SettingsService(getAgentDir()),
-    invalidateConfigCache,
   },
 ): Promise<void> => {
   const parts = args.trim().split(/\s+/);
   const action = parts[0];
 
   if (action === "show") {
-    const config = deps.settingsService.loadPermissionConfig();
+    const config = deps.settingsService.getPermissionConfig();
     const configStr = JSON.stringify(config, null, 2);
     notify(ctx, `Permission Config:\n${configStr}`, "info", prefix);
     return;
@@ -54,7 +46,6 @@ export const handleConfigSubcommand = async (
 
   if (action === "reset") {
     deps.settingsService.savePermissionConfig({});
-    deps.invalidateConfigCache();
     notify(ctx, "Permission config reset to defaults", "info", prefix);
     return;
   }

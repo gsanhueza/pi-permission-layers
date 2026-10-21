@@ -18,13 +18,13 @@ function createConfigDeps(
   savePermissionConfig: ReturnType<typeof vi.fn> = vi.fn(),
 ) {
   const settingsService = {
-    loadPermissionConfig: () =>
+    getPermissionConfig: () =>
       (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
     savePermissionConfig,
+    clearCache: () => {},
   } as unknown as SettingsService;
   return {
     settingsService,
-    invalidateConfigCache: () => {},
     savePermissionConfig,
   };
 }
@@ -84,6 +84,15 @@ describe("handleConfigSubcommand: config reset", () => {
     await handleConfigSubcommand("reset", ctx as never, "", deps);
 
     expect(savePermissionConfig).toHaveBeenCalledWith({});
+  });
+
+  test("reset does not call invalidateConfigCache", async () => {
+    const ctx = makeCtx();
+    const deps = createConfigDeps();
+
+    await handleConfigSubcommand("reset", ctx as never, "", deps);
+
+    // No invalidateConfigCache call — savePermissionConfig updates cache in-memory
   });
 });
 

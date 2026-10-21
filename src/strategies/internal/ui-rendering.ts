@@ -44,7 +44,7 @@ export const isQuietMode = (
   if (process.argv.includes("--quiet") || process.argv.includes("-q"))
     return true;
 
-  const config = settingsService.loadPermissionConfig();
+  const config = settingsService.getPermissionConfig();
   return config.quietStartup === true;
 };
 
@@ -141,7 +141,7 @@ export const notifySystem = async (
   ) => void,
 ): Promise<void> => {
   const fn = execFileFn;
-  const config = settingsService.loadPermissionConfig();
+  const config = settingsService.getPermissionConfig();
   const focused = await isTerminalFocused();
 
   if (config.systemNotifications === "off") return;

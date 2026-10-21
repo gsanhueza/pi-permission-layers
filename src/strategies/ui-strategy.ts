@@ -2,7 +2,6 @@ import {
   ExtensionCommandContext,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import type { PermissionConfig } from "../core/interfaces";
 import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import {
@@ -26,7 +25,6 @@ import {
  */
 export class UIPermissionStrategy extends BasePermissionStrategy {
   constructor(
-    getCachedConfig?: (settingsService: SettingsService) => PermissionConfig,
     settingsService?: SettingsService,
     execFileFn?: (
       file: string,
@@ -34,7 +32,7 @@ export class UIPermissionStrategy extends BasePermissionStrategy {
       cb: (err: Error | null, stdout: string, stderr: string) => void,
     ) => void,
   ) {
-    super(getCachedConfig, settingsService, execFileFn);
+    super(settingsService, execFileFn);
   }
 
   // ── State ────────────────────────────────────────────────────────

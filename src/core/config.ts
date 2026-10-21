@@ -1,32 +1,11 @@
 import { Classification, PermissionConfig } from "./interfaces";
-import { SettingsService } from "./settings";
 
 // ============================================================================
-// CONFIGURATION CACHING
+// REGEX CACHING
 // ============================================================================
-
-let configCache: PermissionConfig | null = null;
-let configCacheTime = 0;
-const CONFIG_CACHE_TTL = 5000; // 5 seconds
 
 let regexCache: Map<string, RegExp> = new Map();
 const MAX_REGEX_CACHE_SIZE = 500;
-
-export const invalidateConfigCache = (): void => {
-  configCache = null;
-  regexCache.clear();
-};
-
-export const getCachedConfig = (
-  settingsService: SettingsService,
-): PermissionConfig => {
-  const now = Date.now();
-  if (!configCache || now - configCacheTime > CONFIG_CACHE_TTL) {
-    configCache = settingsService.loadPermissionConfig();
-    configCacheTime = now;
-  }
-  return configCache;
-};
 
 const getCachedRegex = (pattern: string): RegExp => {
   let regex = regexCache.get(pattern);

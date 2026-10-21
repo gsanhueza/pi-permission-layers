@@ -224,12 +224,10 @@ MCP permission classification:
 
 Configuration utilities:
 
-- `getCachedConfig()` — TTL-based cache (5 seconds) for permission config
 - `globToRegex()` — Converts glob patterns to case-insensitive regex
 - `matchesAnyPattern()` — Checks if a command matches any pattern in a level
 - `applyPrefixMappings()` — Normalizes version-manager commands (`fvm flutter` → `flutter`)
 - `checkOverrides()` — Checks overrides from most restrictive to least (dangerous → high → medium → low → minimal)
-- `invalidateConfigCache()` — Clears config and regex caches
 
 ### `core/constants.ts`
 

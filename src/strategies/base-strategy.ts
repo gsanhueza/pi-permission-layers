@@ -8,12 +8,7 @@ import { execFile } from "node:child_process";
 
 import { classifyCommand } from "../core/classifiers/shell-classifier";
 import { resolveToolLevel } from "../core/classifiers/tool-classifier";
-import { getCachedConfig, invalidateConfigCache } from "../core/config";
-import type {
-  Classification,
-  PermissionState,
-  PermissionConfig,
-} from "../core/interfaces";
+import type { Classification, PermissionState } from "../core/interfaces";
 import { SettingsService } from "../core/settings";
 import type { PermissionLevel, PermissionMode } from "../core/types";
 import { LEVELS, LEVEL_INDEX, PERMISSION_MODES } from "../core/types";
@@ -31,9 +26,6 @@ import { classifyAndCheck } from "./internal/tool-permission";
  */
 export abstract class BasePermissionStrategy implements PermissionStrategy {
   public readonly state: PermissionState;
-  protected readonly getCachedConfig: (
-    settingsService: SettingsService,
-  ) => PermissionConfig;
   protected readonly settingsService: SettingsService;
   protected readonly execFileFn: (
     file: string,
@@ -42,7 +34,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ) => void;
 
   constructor(
-    getCachedConfigFn?: (settingsService: SettingsService) => PermissionConfig,
     settingsService?: SettingsService,
     execFileFn?: (
       file: string,
@@ -50,8 +41,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       cb: (err: Error | null, stdout: string, stderr: string) => void,
     ) => void,
   ) {
-    this.getCachedConfig =
-      getCachedConfigFn ?? ((s: SettingsService) => getCachedConfig(s));
     this.settingsService =
       settingsService ?? new SettingsService(getAgentDir());
     this.execFileFn = execFileFn ?? execFile;
@@ -126,11 +115,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): Promise<{ block: true; reason: string } | undefined> {
     if (this.state.currentLevel === "bypassed") return undefined;
 
-    const classification = classifyCommand(
-      command,
-      undefined,
-      this.settingsService,
-    );
+    const classification = classifyCommand(command, this.settingsService);
 
     if (classification.dangerous) {
       return this.onDangerous(command, ctx);
@@ -148,7 +133,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     input: McpToolInput,
     ctx: ExtensionContext,
   ): Promise<{ block: true; reason: string } | undefined> {
-    const config = this.getCachedConfig(this.settingsService);
+    const config = this.settingsService.getPermissionConfig();
     const { targetTool, requiredLevel, dangerous } = parseMcpInput(
       input,
       config.mcp,
@@ -178,7 +163,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
   ): Promise<{ block: true; reason: string } | undefined> {
     if (this.state.currentLevel === "bypassed") return undefined;
 
-    const config = this.getCachedConfig(this.settingsService);
+    const config = this.settingsService.getPermissionConfig();
     const classification = resolveToolLevel(toolName, config.tools);
     const action = toolName === "write" ? "Write" : "Edit";
 
@@ -209,7 +194,7 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
     }
 
     // Fallback: all other tools (read, ls, grep, find, unknown)
-    const config = this.getCachedConfig(this.settingsService);
+    const config = this.settingsService.getPermissionConfig();
     const classification = resolveToolLevel(event.toolName, config.tools);
 
     return this.checkAndHandleTool(
@@ -272,7 +257,6 @@ export abstract class BasePermissionStrategy implements PermissionStrategy {
       const configArgs = arg.replace(/^config\s*/, "");
       await handleConfigSubcommand(configArgs, ctx, this.configPrefix(), {
         settingsService: this.settingsService,
-        invalidateConfigCache,
       });
       return;
     }

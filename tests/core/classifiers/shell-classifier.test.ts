@@ -7,15 +7,51 @@
 import { describe, expect, test } from "vitest";
 import { classifyCommand } from "../../../src/core/classifiers/shell-classifier";
 import type { PermissionConfig } from "../../../src/core/interfaces";
+import { SettingsService } from "../../../src/core/settings";
+
+const mockSettingsService: SettingsService = {
+  getPermissionConfig: () => ({}),
+  savePermissionConfig: () => {},
+  clearCache: () => {},
+  loadGlobalPermissionLevel: () => null,
+  loadGlobalPermissionMode: () => null,
+  saveGlobalPermissionLevel: () => {},
+  saveGlobalPermissionMode: () => {},
+} as unknown as SettingsService;
+
+/** Classify against empty config via mock settingsService. */
+const classify = (command: string) =>
+  classifyCommand(command, mockSettingsService);
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
 const assertLevel = (cmd: string, expected: string, dangerous = false) => {
-  const result = classifyCommand(cmd, { prefixMappings: [], overrides: {} });
+  const result = classify(cmd);
   expect(result.level).toBe(expected);
   expect(result.dangerous).toBe(dangerous);
+};
+
+/** Classify with custom config via a mock settingsService. */
+const assertOverrideLevel = (
+  cmd: string,
+  expectedLevel: string,
+  expectedDangerous = false,
+  config: PermissionConfig = {},
+) => {
+  const svc: SettingsService = {
+    getPermissionConfig: () => config,
+    savePermissionConfig: () => {},
+    clearCache: () => {},
+    loadGlobalPermissionLevel: () => null,
+    loadGlobalPermissionMode: () => null,
+    saveGlobalPermissionLevel: () => {},
+    saveGlobalPermissionMode: () => {},
+  } as unknown as SettingsService;
+  const result = classifyCommand(cmd, svc);
+  expect(result.level).toBe(expectedLevel);
+  expect(result.dangerous).toBe(expectedDangerous);
 };
 
 // ============================================================================
@@ -1000,7 +1036,7 @@ describe("edge: multiline commands (escaped newlines)", () => {
 
 describe("edge: doas (OpenBSD sudo alternative)", () => {
   test("doas", () => {
-    const result = classifyCommand("doas ls");
+    const result = classify("doas ls");
     expect(result.level).toBe("high");
   });
 });
@@ -1148,14 +1184,9 @@ describe("override: custom minimal patterns", () => {
       },
     };
 
-    const result1 = classifyCommand("tmux list-sessions", config);
-    expect(result1.level).toBe("minimal");
-
-    const result2 = classifyCommand("tmux show-options", config);
-    expect(result2.level).toBe("minimal");
-
-    const result3 = classifyCommand("tmux attach", config);
-    expect(result3.level).toBe("high");
+    assertOverrideLevel("tmux list-sessions", "minimal", false, config);
+    assertOverrideLevel("tmux show-options", "minimal", false, config);
+    assertOverrideLevel("tmux attach", "high", false, config);
   });
 });
 
@@ -1167,8 +1198,7 @@ describe("override: custom medium patterns", () => {
       },
     };
 
-    const result = classifyCommand("tmux new-session -s test", config);
-    expect(result.level).toBe("medium");
+    assertOverrideLevel("tmux new-session -s test", "medium", false, config);
   });
 });
 
@@ -1180,8 +1210,7 @@ describe("override: custom high patterns", () => {
       },
     };
 
-    const result = classifyCommand("rm -rf /tmp/test", config);
-    expect(result.level).toBe("high");
+    assertOverrideLevel("rm -rf /tmp/test", "high", false, config);
   });
 });
 
@@ -1193,8 +1222,7 @@ describe("override: dangerous patterns", () => {
       },
     };
 
-    const result = classifyCommand("dd if=/dev/zero of=/dev/sda", config);
-    expect(result.dangerous).toBe(true);
+    assertOverrideLevel("dd if=/dev/zero of=/dev/sda", "high", true, config);
   });
 });
 
@@ -1207,11 +1235,8 @@ describe("override: priority order", () => {
       },
     };
 
-    const result1 = classifyCommand("cmd dangerous-thing", config);
-    expect(result1.level).toBe("high");
-
-    const result2 = classifyCommand("cmd safe-thing", config);
-    expect(result2.level).toBe("minimal");
+    assertOverrideLevel("cmd dangerous-thing", "high", false, config);
+    assertOverrideLevel("cmd safe-thing", "minimal", false, config);
   });
 });
 
@@ -1225,17 +1250,10 @@ describe("prefix: fvm flutter normalization", () => {
       prefixMappings: [{ from: "fvm flutter", to: "flutter" }],
     };
 
-    const result1 = classifyCommand("fvm flutter build", config);
-    expect(result1.level).toBe("medium");
-
-    const result2 = classifyCommand("fvm flutter run", config);
-    expect(result2.level).toBe("high");
-
-    const result3 = classifyCommand("fvm flutter doctor", config);
-    expect(result3.level).toBe("minimal");
-
-    const result4 = classifyCommand("fvm flutter test", config);
-    expect(result4.level).toBe("medium");
+    assertOverrideLevel("fvm flutter build", "medium", false, config);
+    assertOverrideLevel("fvm flutter run", "high", false, config);
+    assertOverrideLevel("fvm flutter doctor", "minimal", false, config);
+    assertOverrideLevel("fvm flutter test", "medium", false, config);
   });
 });
 
@@ -1249,11 +1267,8 @@ describe("prefix: multiple prefix mappings", () => {
       ],
     };
 
-    const result1 = classifyCommand("nvm exec node script.js", config);
-    expect(result1.level).toBe("high");
-
-    const result2 = classifyCommand("rbenv exec ruby script.rb", config);
-    expect(result2.level).toBe("high");
+    assertOverrideLevel("nvm exec node script.js", "high", false, config);
+    assertOverrideLevel("rbenv exec ruby script.rb", "high", false, config);
   });
 });
 
@@ -1263,8 +1278,7 @@ describe("prefix: empty mapping (strip prefix)", () => {
       prefixMappings: [{ from: "rbenv exec", to: "" }],
     };
 
-    const result = classifyCommand("rbenv exec ruby script.rb", config);
-    expect(result.level).toBe("high");
+    assertOverrideLevel("rbenv exec ruby script.rb", "high", false, config);
   });
 });
 
@@ -1277,8 +1291,7 @@ describe("prefix: combined with overrides", () => {
       prefixMappings: [{ from: "fvm flutter", to: "flutter" }],
     };
 
-    const result = classifyCommand("fvm flutter doctor", config);
-    expect(result.level).toBe("minimal");
+    assertOverrideLevel("fvm flutter doctor", "minimal", false, config);
   });
 });
 
@@ -1306,8 +1319,7 @@ describe("config: null/undefined patterns handled", () => {
       },
     };
 
-    const result = classifyCommand("ls", config);
-    expect(result.level).toBe("minimal");
+    assertOverrideLevel("ls", "minimal", false, config);
   });
 });
 
@@ -1320,11 +1332,8 @@ describe("config: case insensitivity", () => {
       prefixMappings: [{ from: "FVM FLUTTER", to: "flutter" }],
     };
 
-    const result1 = classifyCommand("tmux list-sessions", config);
-    expect(result1.level).toBe("minimal");
-
-    const result2 = classifyCommand("fvm flutter build", config);
-    expect(result2.level).toBe("medium");
+    assertOverrideLevel("tmux list-sessions", "minimal", false, config);
+    assertOverrideLevel("fvm flutter build", "medium", false, config);
   });
 });
 
@@ -1340,8 +1349,7 @@ describe("security: wildcard pattern doesn't bypass dangerous detection", () => 
       },
     };
 
-    const result = classifyCommand("sudo rm -rf /", config);
-    expect(result.level).toBe("minimal"); // override takes precedence (by design)
+    assertOverrideLevel("sudo rm -rf /", "minimal", false, config);
   });
 });
 
@@ -1353,9 +1361,7 @@ describe("security: prefix mapping to dangerous command", () => {
       ],
     };
 
-    const result = classifyCommand("safe /", config);
-    expect(result.level).toBe("high");
-    expect(result.dangerous).toBe(true);
+    assertOverrideLevel("safe /", "high", true, config);
   });
 });
 
@@ -1368,8 +1374,7 @@ describe("security: override consistency with prefix mapping", () => {
       prefixMappings: [{ from: "fvm flutter", to: "flutter" }],
     };
 
-    const result = classifyCommand("fvm flutter doctor", config);
-    expect(result.level).toBe("minimal");
+    assertOverrideLevel("fvm flutter doctor", "minimal", false, config);
   });
 });
 
@@ -1386,11 +1391,8 @@ describe("security: invalid config entries are handled gracefully", () => {
       ],
     };
 
-    const result1 = classifyCommand("ls", config);
-    expect(result1.level).toBe("minimal");
-
-    const result2 = classifyCommand("fvm flutter build", config);
-    expect(result2.level).toBe("medium");
+    assertOverrideLevel("ls", "minimal", false, config);
+    assertOverrideLevel("fvm flutter build", "medium", false, config);
   });
 });
 
@@ -1404,8 +1406,7 @@ describe("prefix: handles tabs and multiple spaces", () => {
       prefixMappings: [{ from: "fvm flutter", to: "flutter" }],
     };
 
-    const result1 = classifyCommand("fvm flutter  build", config);
-    expect(result1.level).toBe("medium");
+    assertOverrideLevel("fvm flutter  build", "medium", false, config);
   });
 });
 
@@ -1415,8 +1416,7 @@ describe("prefix: partial match doesn't trigger", () => {
       prefixMappings: [{ from: "fvm", to: "flutter" }],
     };
 
-    const result = classifyCommand("fvmx build", config);
-    expect(result.level).toBe("high");
+    assertOverrideLevel("fvmx build", "high", false, config);
   });
 });
 
@@ -1432,11 +1432,8 @@ describe("override: question mark wildcard", () => {
       },
     };
 
-    const result1 = classifyCommand("ls", config);
-    expect(result1.level).toBe("minimal");
-
-    const result2 = classifyCommand("lsa", config);
-    expect(result2.level).toBe("high");
+    assertOverrideLevel("ls", "minimal", false, config);
+    assertOverrideLevel("lsa", "high", false, config);
   });
 });
 
@@ -1448,11 +1445,8 @@ describe("override: special regex chars in pattern", () => {
       },
     };
 
-    const result1 = classifyCommand("test.file", config);
-    expect(result1.level).toBe("minimal");
-
-    const result2 = classifyCommand("testXfile", config);
-    expect(result2.level).toBe("high");
+    assertOverrideLevel("test.file", "minimal", false, config);
+    assertOverrideLevel("testXfile", "high", false, config);
   });
 });
 
@@ -1465,22 +1459,9 @@ describe("override: empty pattern array", () => {
       },
     };
 
-    const result = classifyCommand("ls", config);
-    expect(result.level).toBe("minimal");
+    assertOverrideLevel("ls", "minimal", false, config);
   });
 });
-
-// Override-specific assertLevel that accepts config
-const assertOverrideLevel = (
-  cmd: string,
-  expectedLevel: string,
-  expectedDangerous = false,
-  config?: PermissionConfig,
-) => {
-  const result = classifyCommand(cmd, config);
-  expect(result.level).toBe(expectedLevel);
-  expect(result.dangerous).toBe(expectedDangerous);
-};
 
 describe("baseline: compound commands without overrides", () => {
   test("cd && high-level command stays high", () => {

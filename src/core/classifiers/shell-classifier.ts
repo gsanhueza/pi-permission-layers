@@ -4,7 +4,6 @@
 
 import { parse } from "shell-quote";
 import { applyPrefixMappings, checkOverrides } from "../config";
-import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { SettingsService } from "../settings";
 import {
   ALL_REDIRECTION_OPS,
@@ -14,7 +13,7 @@ import {
   SHELL_EXECUTION_COMMANDS,
   SHELL_TRICK_PATTERNS,
 } from "../constants";
-import type { Classification, PermissionConfig } from "../interfaces";
+import type { Classification } from "../interfaces";
 import {
   getCommandName,
   isHighLevel,
@@ -230,16 +229,11 @@ const classifySegment = (tokens: string[]): Classification => {
 // PUBLIC CLASSIFY COMMAND
 // ============================================================================
 
-const defaultSettingsService = new SettingsService(getAgentDir());
-
 export const classifyCommand = (
   command: string,
-  config?: PermissionConfig,
-  settingsService?: SettingsService,
+  settingsService: SettingsService,
 ): Classification => {
-  const effectiveConfig =
-    config ??
-    (settingsService ?? defaultSettingsService).loadPermissionConfig();
+  const effectiveConfig = settingsService.getPermissionConfig();
 
   const normalizedCommand = applyPrefixMappings(
     command,

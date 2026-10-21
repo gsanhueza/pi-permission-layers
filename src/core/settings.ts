@@ -10,9 +10,25 @@ import { LEVELS, PERMISSION_MODES } from "./types";
 
 export class SettingsService {
   private manager: SettingsManager;
+  private cachedConfig: PermissionConfig = {};
+  private cachedAt: number = 0;
+  private readonly ttlMs: number = 5000;
 
   constructor(agentDir: string) {
     this.manager = new SettingsManager(path.join(agentDir, "settings.json"));
+    this.loadConfig();
+  }
+
+  private isCacheStale(): boolean {
+    return Date.now() - this.cachedAt > this.ttlMs;
+  }
+
+  private loadConfig(): void {
+    const settings = this.manager.load();
+    this.cachedConfig = this.manager.validate(
+      settings.permissionConfig as PermissionConfig,
+    );
+    this.cachedAt = Date.now();
   }
 
   loadGlobalPermissionLevel(): PermissionLevel | null {
@@ -45,14 +61,25 @@ export class SettingsService {
     this.manager.save(settings);
   }
 
-  loadPermissionConfig(): PermissionConfig {
-    const settings = this.manager.load();
-    return this.manager.validate(settings.permissionConfig as PermissionConfig);
+  /** Load permission config — serves from in-memory cache (5s TTL). */
+  getPermissionConfig(): PermissionConfig {
+    if (this.isCacheStale()) {
+      this.loadConfig();
+    }
+    return this.cachedConfig;
   }
 
   savePermissionConfig(config: PermissionConfig): void {
     const settings = this.manager.load();
     settings.permissionConfig = config;
     this.manager.save(settings);
+    // Update in-memory cache so subsequent reads see the new config
+    this.cachedConfig = config;
+  }
+
+  /** Clear in-memory cache so next read reloads from disk. */
+  clearCache(): void {
+    this.cachedConfig = {};
+    this.cachedAt = 0;
   }
 }
