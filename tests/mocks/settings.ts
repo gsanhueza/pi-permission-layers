@@ -1,12 +1,9 @@
-import { mockSettings } from "../fixtures/helpers";
+import { getSettingsMock } from "./factories";
 
 /**
  * Default settings mock — used when tests don't need custom overrides.
  */
-export const settingsMock: Record<string, unknown> = {
-  loadPermissionConfig: () =>
-    (mockSettings.permissionConfig as Record<string, unknown>) ?? {},
-};
+export const settingsMock: Record<string, unknown> = getSettingsMock();
 
 /**
  * Settings mock for strategy tests — stubs global level/mode persistence.

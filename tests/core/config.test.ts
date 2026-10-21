@@ -5,14 +5,20 @@
  */
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { makeSimpleNotifyCtx } from "../fixtures/helpers";
+import { makeSimpleNotifyCtx } from "../mocks/context";
 import { handleConfigSubcommand } from "../../src/strategies/internal/commands";
 import { SettingsService } from "../../src/core/settings";
 import { SettingsManager } from "../../src/core/manager";
 
 const makeCtx = makeSimpleNotifyCtx;
 
-const mockSettings = require("../fixtures/mock-settings.json");
+const mockSettings = {
+  permissionLevel: "minimal",
+  permissionConfig: {
+    quietStartup: false,
+    systemNotifications: "off",
+  },
+};
 
 function createConfigDeps(
   savePermissionConfig: ReturnType<typeof vi.fn> = vi.fn(),

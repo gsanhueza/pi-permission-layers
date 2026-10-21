@@ -1,7 +1,0 @@
-{
-  "permissionLevel": "minimal",
-  "permissionConfig": {
-    "quietStartup": false,
-    "systemNotifications": "off"
-  }
-}

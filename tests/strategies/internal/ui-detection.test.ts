@@ -4,7 +4,7 @@
  * Run with: npm test
  */
 import { describe, expect, test } from "vitest";
-import { withArgv } from "../../fixtures/helpers";
+import { withArgv } from "../../mocks/argv";
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { hasInteractiveUI } from "../../../src/strategies/internal/ui-detection";

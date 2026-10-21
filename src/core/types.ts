@@ -1,5 +1,9 @@
 export type PermissionLevel =
-  "minimal" | "low" | "medium" | "high" | "bypassed";
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "bypassed";
 
 export type PermissionMode = "ask" | "block";
 

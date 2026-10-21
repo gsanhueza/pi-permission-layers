@@ -7,17 +7,14 @@
  * Run with: npm test
  */
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  getPiCodingAgentMock,
-  makeCtx,
-  resetStrategyState,
-} from "../fixtures/helpers";
+import { getPiCodingAgentMock } from "../mocks/factories";
+import { makeCtx, CANCEL } from "../mocks/context";
+import type { NotifyCall, SelectCall } from "../mocks/context";
+import { resetStrategyState } from "../mocks/strategies";
 
 vi.mock("@earendil-works/pi-coding-agent", () => getPiCodingAgentMock());
 
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { CANCEL } from "../fixtures/helpers";
-import type { NotifyCall, SelectCall } from "../fixtures/helpers";
 import {
   createNoUIPermissionStrategy,
   createUIPermissionStrategy,
